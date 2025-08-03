@@ -23,11 +23,13 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
         endif()
 
         pkg_check_modules(SDL3 ${SDL3_FIND_QUIET} ${PC_FIND_MODULESPEC})
+        unset(PC_FIND_MODULE_SPEC)
 
         if(SDL3_FOUND)
             # make sure the package found has SDL3-static.lib
             set(SDL3_ROOT "${SDL3_LIBDIR}")
             find_sdl3_library(SDL3_FOUND)
+            unset(SDL3_ROOT)
 
             if(SDL3_FOUND)
                 add_library(SDL3::SDL3 UNKNOWN IMPORTED)
@@ -39,13 +41,10 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
                     IMPORTED_SONAME "${SDL3_FIND_VERSION_MAJOR}"
                 )
             else()
-                unset(SDL3_LIBDIR CACHE)
-                unset(SDL3_VERSION CACHE)
+                unset(SDL3_LIBDIR)
+                unset(SDL3_VERSION)
             endif()
         endif()
-
-        unset(SDL3_ROOT)
-        unset(PC_FIND_MODULE_SPEC)
     endif()
 endif()
 
@@ -54,8 +53,6 @@ if(NOT SDL3_FOUND)
     if(SDL3_FIND_VERSION_EXACT)
         set(SDL3_FIND_EXACT EXACT)
     endif()
-
-    set(SDL3_ROOT "${PROJECT_BINARY_DIR}/vendor/SDL")
 
     find_package(SDL3
         ${SDL3_FIND_VERSION}
@@ -66,18 +63,15 @@ if(NOT SDL3_FOUND)
         NO_SYSTEM_ENVIRONMENT_PATH
     )
 
+    unset(SDL3_FIND_EXACT)
+    unset(SDL3_FIND_QUIET)
+
     if (SDL3_FOUND)
         # make sure the package found has SDL3-static.lib
+        set(SDL3_ROOT "${PROJECT_BINARY_DIR}/vendor/SDL")
         find_sdl3_library(SDL3_FOUND)
-
-        if (SDL3_FOUND)
-            set(SDL3_LIBDIR "${SDL3_BINARY_DIR}")
-            set(SDL3_VERSION ${SDL3_PROJECT_VERSION})
-        endif()
+        unset(SDL3_ROOT)
     endif()
-
-    unset(SDL3_ROOT)
-    unset(SDL3_FIND_EXACT)
 endif()
 
 # finally, just build it from source
@@ -86,7 +80,10 @@ if(NOT SDL3_FOUND AND SDL3_FIND_REQUIRED)
     set(SDL_SHARED OFF)
     set(SDL_TEST_LIBRARY OFF)
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/vendor/SDL" EXCLUDE_FROM_ALL)
+    set(SDL3_FOUND TRUE)
+endif()
 
+if(SDL3_FOUND)
     set(SDL3_LIBDIR "${SDL3_BINARY_DIR}")
     set(SDL3_VERSION ${SDL3_PROJECT_VERSION})
 endif()
@@ -96,5 +93,3 @@ find_package_handle_standard_args(SDL3
     REQUIRED_VARS SDL3_LIBDIR
     VERSION_VAR SDL3_VERSION
 )
-
-unset(SDL3_FIND_QUIET)
