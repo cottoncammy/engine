@@ -1,3 +1,4 @@
+# see: https://github.com/llvm/llvm-project/blob/llvmorg-19.1.5/clang/docs/ClangFormatStyleOptions.rst
 Language: C
 BreakBeforeBraces: Attach
 BreakStringLiterals: true
@@ -25,9 +26,7 @@ ReflowComments: Always
 RemoveEmptyLinesInUnwrappedLines: true
 RemoveParentheses: ReturnStatement
 RemoveSemicolon: true
-SortIncludes:
-  Enabled: true
-  IgnoreExtension: true
+SortIncludes: CaseSensitive
 SpaceAfterCStyleCast: false
 SpaceAfterLogicalNot: false
 SpaceAroundPointerQualifiers: After

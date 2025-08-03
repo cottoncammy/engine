@@ -1,17 +1,12 @@
 CompileFlags:
   CompilationDatabase: build
-  Compiler: clang-cl
-Style:
-  QuotedHeaders: ["^src/.*"]
-  AngledHeaders: ["^.*"]
 Diagnostics:
   ClangTidy:
     Add:
       - "bugprone-*"
       - "clang-analyzer-*"
-      - "portability-*"
+      - "misc-*"
+  UnusedIncludes: Strict
   MissingIncludes: Strict
-Completion:
-  ArgumentLists: Delimiters
 InlayHints:
   BlockEnd: true
