@@ -2,26 +2,27 @@ cmake_minimum_required(VERSION 3.50 FATAL_ERROR)
 
 project(engine VERSION 0.0.0 LANGUAGES C)
 
-if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-    message(FATAL_ERROR "")
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    message(FATAL_ERROR "non-Windows builds aren't supported")
 endif()
 
 if($<NOT:$<C_COMPILER_ID:Clang>> OR NOT CMAKE_C_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
-    message(FATAL_ERROR "")
+    message(FATAL_ERROR "only the clang-cl C compiler is supported")
 endif()
 
-if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    message(FATAL_ERROR "")
+if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    message(FATAL_ERROR "non-root builds aren't supported")
+endif()
+
+if(NOT DEFINED BUILD_SHARED_LIBS)
+    set(BUILD_SHARED_LIBS OFF)
+elseif(BUILD_SHARED_LIBS)
+    message(FATAL_ERROR "shared library builds aren't supported")
 endif()
 
 if(NOT DEFINED CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
-endif()
-
-if(NOT DEFINED BUILD_SHARED_LIBS)
-    set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "")
-elseif(BUILD_SHARED_LIBS)
-    message(FATAL_ERROR "")
+    set(DEFINED_CMAKE_BUILD_TYPE TRUE)
 endif()
 
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -100,3 +101,7 @@ export(EXPORT engine-targets
 set(CMAKE_EXPORT_PACKAGE_REGISTRY ON)
 export(PACKAGE engine)
 set(CMAKE_EXPORT_PACKAGE_REGISTRY OFF)
+
+if(DEFINED_CMAKE_BUILD_TYPE)
+    unset(CMAKE_BUILD_TYPE)
+endif()
