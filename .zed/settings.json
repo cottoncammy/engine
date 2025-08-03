@@ -5,8 +5,7 @@
 {
   "file_types": {
     "Plain Text": [
-      ".gitattributes",
-      ".gitignore",
+      ".git*",
       "*.cmake",
       "*.cmake.in",
       "*.bat"
@@ -19,8 +18,18 @@
   "lsp": {
     "clangd": {
       "binary": {
-        "path": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/Llvm/bin/clangd.exe",
+        "path": "C:/Program Files/clangd/bin/clangd.exe",
         "arguments": []
+      }
+    }
+  },
+  "terminal": {
+    "shell": {
+      "with_arguments": {
+        "program": "cmd.exe",
+        "args": [
+          "/k \"C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Auxiliary/Build/vcvars64.bat\""
+        ]
       }
     }
   }
