@@ -24,12 +24,14 @@ elseif(BUILD_SHARED_LIBS)
     message(FATAL_ERROR "")
 endif()
 
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 set(SDL3_VERSION 3.2)
 find_package(SDL3 ${MIN_SDL3_VERSION} REQUIRED)
 
-add_executable(engine WIN32)
+add_executable(engine)
 
 target_compile_features(engine PRIVATE c_std_11)
 
@@ -39,7 +41,6 @@ set_target_properties(engine PROPERTIES
     C_EXTENSIONS ON
     COMPILE_WARNING_AS_ERROR ON
     EXPORT_COMPILE_COMMANDS ON
-    MSVC_RUNTIME_LIBRARY MultiThreaded$<$<CONFIG:Debug>:Debug>
 )
 
 target_sources(engine
@@ -49,9 +50,8 @@ target_sources(engine
         BASE_DIRS src
         FILES
             src/main.h
-
-        FILES
-            src/main.c
+    PRIVATE
+        src/main.c
 )
 
 target_link_libraries(engine PRIVATE
