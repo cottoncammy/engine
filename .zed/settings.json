@@ -1,0 +1,27 @@
+// Folder-specific settings
+//
+// For a full list of overridable settings, and general information on folder-specific settings,
+// see the documentation: https://zed.dev/docs/configuring-zed#settings-files
+{
+  "file_types": {
+    "Plain Text": [
+      ".gitattributes",
+      ".gitignore",
+      "*.cmake",
+      "*.cmake.in",
+      "*.bat"
+    ],
+    "YAML": [
+      ".clangd",
+      ".clang-format"
+    ]
+  },
+  "lsp": {
+    "clangd": {
+      "binary": {
+        "path": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/Llvm/bin/clangd.exe",
+        "arguments": []
+      }
+    }
+  }
+}

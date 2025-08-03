@@ -1,0 +1,45 @@
+Language: C
+BreakBeforeBraces: Attach
+BreakStringLiterals: true
+EnumTrailingComma: Insert
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: "^<[[:alnum:].]+>"
+    Priority: -1
+  - Regex: '^"[[:alnum:].]+"'
+    Priority: 1
+IndentCaseLabels: true
+IndentGotoLabels: false
+IndentPPDirectives: BeforeHash
+InsertBraces: true
+InsertTrailingCommas: Wrapped
+KeepEmptyLines:
+  AtEndOfFile: true
+  AtStartOfBlock: false
+  AtStartOfFile: false
+MaxEmptyLinesToKeep: 2
+PointerAlignment: Right
+QualifierAlignment: Left
+ReferenceAlignment: Right
+ReflowComments: Always
+RemoveEmptyLinesInUnwrappedLines: true
+RemoveParentheses: ReturnStatement
+RemoveSemicolon: true
+SortIncludes:
+  Enabled: true
+  IgnoreExtension: true
+SpaceAfterCStyleCast: false
+SpaceAfterLogicalNot: false
+SpaceAroundPointerQualifiers: After
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false
+SpaceBeforeParens: ControlStatements
+SpaceBeforeSquareBrackets: false
+SpaceInEmptyBlock: false
+SpacesBeforeTrailingComments: 2
+SpacesInLineCommentPrefix:
+  Minimum: 1
+  Maximum: 1
+SpacesInParens: Never
+SpacesInSquareBrackets: false
+UseTab: AlignWithSpaces

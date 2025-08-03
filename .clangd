@@ -1,0 +1,15 @@
+CompilationDatabase: build
+Compiler: clang-cl
+Style:
+  QuotedHeaders: ["^src/.*"]
+  AngledHeaders: ["^(?!src/.)*"]
+ClangTidy:
+  Add:
+    - "bugprone-*"
+    - "clang-analyzer-*"
+Includes:
+  MissingIncludes: Strict
+Completion:
+  ArgumentLists: Delimiters
+InlayHints:
+  BlockEnd: true
