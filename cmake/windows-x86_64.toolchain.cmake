@@ -1,6 +1,6 @@
-function(xwin_splat xwin_exe)
+function(xwin_splat XWIN_EXE)
     execute_process(COMMAND
-        "${xwin_exe}" --accept-license --arch x86_64 --cache-dir .xwin-cache --manifest-version 17 splat --output "${WINDOWS_X86_X64_SYSROOT}"
+        "${XWIN_EXE}" --accept-license --arch x86_64 --cache-dir .xwin-cache --manifest-version 17 splat --output "${WINDOWS_X86_X64_SYSROOT}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
         COMMAND_ERROR_IS_FATAL ANY
     )

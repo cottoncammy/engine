@@ -1,5 +1,5 @@
-function(find_sdl3_library out_var)
-    find_library(${out_var}
+function(find_sdl3_library OUT_VAR)
+    find_library(${OUT_VAR}
         NAMES SDL3-static.a SDL3-static.lib
         OPTIONAL
         NO_CMAKE_ENVIRONMENT_PATH
