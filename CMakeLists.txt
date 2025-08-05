@@ -2,16 +2,20 @@ cmake_minimum_required(VERSION 3.50 FATAL_ERROR)
 
 project(engine VERSION 0.0.0 LANGUAGES C)
 
-if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    message(FATAL_ERROR "non-Windows builds aren't supported")
+if(NOT CMAKE_SYSTEM_NAME STREQUAL Windows OR NOT CMAKE_SYSTEM_PROCESSOR STREQUAL AMD64)
+    message(FATAL_ERROR "only 64-bit x86 Windows builds are supported")
 endif()
 
-if($<NOT:$<C_COMPILER_ID:Clang>> OR NOT CMAKE_C_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+if(NOT C_COMPILER_ID STREQUAL Clang OR NOT CMAKE_C_COMPILER_FRONTEND_VARIANT STREQUAL MSVC)
     message(FATAL_ERROR "only the clang-cl C compiler is supported")
 endif()
 
-if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-    message(FATAL_ERROR "non-root builds aren't supported")
+if(NOT CMAKE_GENERATOR STREQUAL Ninja)
+    message(FATAL_ERROR "only the Ninja build generartor is supported")
+endif()
+
+if(NOT "${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}")
+    message(FATAL_ERROR "including this project or adding it as a subproject isn't supported")
 endif()
 
 if(NOT DEFINED BUILD_SHARED_LIBS)
@@ -21,16 +25,16 @@ elseif(BUILD_SHARED_LIBS)
 endif()
 
 if(NOT DEFINED CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Debug")
+    set(CMAKE_BUILD_TYPE Debug)
     set(DEFINED_CMAKE_BUILD_TYPE TRUE)
 endif()
 
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded$<$<CONFIG:Debug>:Debug>)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-set(SDL3_VERSION 3.2)
-find_package(SDL3 ${MIN_SDL3_VERSION} REQUIRED)
+set(WANTED_SDL3_VERSION 3.2)
+find_package(SDL3 ${WANTED_SDL3_VERSION} REQUIRED)
 
 add_executable(engine)
 
@@ -77,7 +81,7 @@ install(EXPORT engine-targets
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
     engine-config-version.cmake
-    VERSION ${PACKAGE_VERSION}
+    VERSION ${PROJECT_VERSION}
     COMPATIBILITY ExactVersion
 )
 

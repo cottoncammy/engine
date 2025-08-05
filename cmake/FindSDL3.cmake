@@ -7,12 +7,13 @@ function(find_sdl3_library out_var)
     )
 endfunction()
 
+
 if(SDL3_FIND_QUIETLY)
     set(SDL3_FIND_QUIET QUIET)
 endif()
 
 # on non-Windows, first try pkg-config
-if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
+if(NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
     find_package(PkgConfig QUIET)
 
     if(PKG_CONFIG_FOUND)
@@ -38,7 +39,7 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
                     INTERFACE_INCLUDE_DIRECTORIES "${SDL3_INCLUDE_DIRS}"
                     INTERFACE_LINK_LIBRARIES "${SDL3_LINK_LIBRARIES}"
                     IMPORTED_LINK_INTERFACE_LANGUAGES C;CXX
-                    IMPORTED_SONAME "${SDL3_FIND_VERSION_MAJOR}"
+                    IMPORTED_SONAME ${SDL3_FIND_VERSION_MAJOR}
                 )
             else()
                 unset(SDL3_LIBDIR)
