@@ -2,19 +2,19 @@ cmake_minimum_required(VERSION 3.50 FATAL_ERROR)
 
 project(engine VERSION 0.0.0 LANGUAGES C)
 
-if(NOT CMAKE_SYSTEM_NAME STREQUAL Windows OR NOT CMAKE_SYSTEM_PROCESSOR STREQUAL AMD64)
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows" OR NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "AMD64")
     message(FATAL_ERROR "only 64-bit x86 Windows builds are supported")
 endif()
 
-if(NOT C_COMPILER_ID STREQUAL Clang OR NOT CMAKE_C_COMPILER_FRONTEND_VARIANT STREQUAL MSVC)
+if($<NOT:$<C_COMPILER_ID:Clang>> OR NOT CMAKE_C_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
     message(FATAL_ERROR "only the clang-cl C compiler is supported")
 endif()
 
-if(NOT CMAKE_GENERATOR STREQUAL Ninja)
+if(NOT CMAKE_GENERATOR STREQUAL "Ninja")
     message(FATAL_ERROR "only the Ninja build generartor is supported")
 endif()
 
-if(NOT "${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}")
+if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     message(FATAL_ERROR "including this project or adding it as a subproject isn't supported")
 endif()
 

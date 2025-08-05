@@ -7,7 +7,7 @@ function(xwin_splat XWIN_EXE)
 endfunction()
 
 
-if(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL Linux)
+if(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
     message(FATAL_ERROR "cross compiling to Windows x86_64 is only supported on Linux")
 endif()
 

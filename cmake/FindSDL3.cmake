@@ -13,7 +13,7 @@ if(SDL3_FIND_QUIETLY)
 endif()
 
 # on non-Windows, first try pkg-config
-if(NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
     find_package(PkgConfig QUIET)
 
     if(PKG_CONFIG_FOUND)
