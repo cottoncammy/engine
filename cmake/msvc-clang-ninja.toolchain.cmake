@@ -35,19 +35,18 @@ set(VSWHERE_REQUIRES
     Microsoft.VisualStudio.ComponentGroup.NativeDesktop.Llvm.Clang
 )
 
-list(JOIN VSWHERE_REQUIRES ", " VSWHERE_REQUIRES_ARG)
-message(VSWHERE_REQUIRES_ARG=${VSWHERE_REQUIRES_ARG})
-unset(VSWHERE_REQUIRES)
-
 execute_process(COMMAND
-    "${VSWHERE_INSTALL_PATH}/vswhere" -products Microsoft.VisualStudio.Product.BuildTools -latest -version 17 -requires ${VSWHERE_REQUIRES_ARG} -property installationPath
+    "${VSWHERE_INSTALL_PATH}/vswhere" -products Microsoft.VisualStudio.Product.BuildTools
+        -latest -version 17 -requires ${VSWHERE_REQUIRES} -property installationPath
     WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
     OUTPUT_VARIABLE VS17_INSTALLATION_PATH
     OUTPUT_STRIP_TRAILING_WHITESPACE
     COMMAND_ERROR_IS_FATAL ANY
 )
 
+unset(VSWHERE_REQUIRES)
 unset(VSWHERE_INSTALL_PATH)
+
 if(NOT VS17_INSTALLATION_PATH)
     message(FATAL_ERROR "vswhere couldn't find an installation of Visual Studio 17 Build Tools with the required workloads and components")
 endif()
