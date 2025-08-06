@@ -39,7 +39,7 @@ execute_process(COMMAND
     "${VSWHERE_INSTALL_PATH}/vswhere" -products Microsoft.VisualStudio.Product.BuildTools
         -latest -version 17 -requires ${VSWHERE_REQUIRES} -property installationPath
     WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
-    OUTPUT_VARIABLE VS17_INSTALLATION_PATH
+    OUTPUT_VARIABLE VS17_INSTALL_PATH
     OUTPUT_STRIP_TRAILING_WHITESPACE
     COMMAND_ERROR_IS_FATAL ANY
 )
@@ -47,15 +47,15 @@ execute_process(COMMAND
 unset(VSWHERE_REQUIRES)
 unset(VSWHERE_INSTALL_PATH)
 
-if(NOT VS17_INSTALLATION_PATH)
+if(NOT VS17_INSTALL_PATH)
     message(FATAL_ERROR "vswhere couldn't find an installation of Visual Studio 17 Build Tools with the required workloads and components")
 endif()
 
-cmake_path(NORMAL_PATH VS17_INSTALLATION_PATH)
+cmake_path(NORMAL_PATH VS17_INSTALL_PATH)
 
-list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${VS17_INSTALLATION_PATH}/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja")
+list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${VS17_INSTALL_PATH}/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja")
 
-file(READ "${VS17_INSTALLATION_PATH}/VC/Auxiliary/Build/Microsoft.VCToolsVersion.default.txt" VS17_MSVC_VERSION LIMIT_COUNT 1)
+file(READ "${VS17_INSTALL_PATH}/VC/Auxiliary/Build/Microsoft.VCToolsVersion.default.txt" VS17_MSVC_VERSION LIMIT_COUNT 1)
 
 if(NOT VS17_MSVC_VERSION)
     message(FATAL_ERROR "the installed version of MSVC couldn't be determined")
@@ -63,11 +63,11 @@ endif()
 
 string(STRIP ${VS17_MSVC_VERSION} VS17_MSVC_VERSION)
 
-set(VS17_MSVC_PATH "${VS17_INSTALLATION_PATH}/VC/Tools/MSVC/${VS17_MSVC_VERSION}")
-list(APPEND CMAKE_SYSTEM_LIBRARY_PATH "${VS17_MSVC_PATH}/lib/x64")
-list(APPEND CMAKE_SYSTEM_INCLUDE_PATH "${VS17_MSVC_PATH}/include")
+set(VS17_MSVC_INSTALL_PATH "${VS17_INSTALL_PATH}/VC/Tools/MSVC/${VS17_MSVC_VERSION}")
+list(APPEND CMAKE_SYSTEM_LIBRARY_PATH "${VS17_MSVC_INSTALL_PATH}/lib/x64")
+list(APPEND CMAKE_SYSTEM_INCLUDE_PATH "${VS17_MSVC_INSTALL_PATH}/include")
 
-set(VS17_LLVM_PATH "${VS17_INSTALLATION_PATH}/VC/Tools/Llvm/x64/bin")
-set(CMAKE_C_COMPILER "${VS17_LLVM_PATH}/clang-cl.exe")
+set(VS17_LLVM_INSTALL_PATH "${VS17_INSTALL_PATH}/VC/Tools/Llvm/x64/bin")
+set(CMAKE_C_COMPILER "${VS17_LLVM_INSTALL_PATH}/clang-cl.exe")
 set(CMAKE_LINKER_TYPE LLD)
-set(CMAKE_RC_COMPILER "${VS17_LLVM_PATH}/llvm-rc.exe")
+set(CMAKE_RC_COMPILER "${VS17_LLVM_INSTALL_PATH}/llvm-rc.exe")
