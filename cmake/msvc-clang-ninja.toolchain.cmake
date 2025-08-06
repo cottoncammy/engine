@@ -1,28 +1,35 @@
+include_guard(GLOBAL)
+
 if(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows" OR NOT CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "AMD64")
-    message(FATAL_ERROR "this toolchain file is only supported on 64-bit x86 Windows")
+    message(FATAL_ERROR "this toolchain file is only supported on 64-bit x86 Windows host systems")
 endif()
 
-set(VSWHERE_VERSION 3.1.7)
-set(VSWHERE_URL https://github.com/microsoft/vswhere/releases/download/${VSWHERE_VERSION}/vswhere.exe)
-set(VSWHERE_URL_HASH SHA256=c54f3b7c9164ea9a0db8641e81ecdda80c2664ef5a47c4191406f848cc07c662)
-set(VSWHERE_INSTALL_PATH "${CMAKE_CURRENT_BINARY_DIR}/vendor/vswhere")
+set(VSWHERE_INSTALL_PATH "$ENV{ProgramFiles\(x86\)}/Microsoft Visual Studio/Installer")
 
-file(DOWNLOAD ${VSWHERE_URL}
-    "${VSWHERE_INSTALL_PATH}/vswhere.exe"
-    STATUS VSWHERE_DOWNLOAD_STATUS
-    EXPECTED_HASH ${VSWHERE_URL_HASH}
-)
+if(NOT EXISTS "${VSWHERE_INSTALL_PATH}")
+    set(VSWHERE_VERSION 3.1.7)
+    set(VSWHERE_URL https://github.com/microsoft/vswhere/releases/download/${VSWHERE_VERSION}/vswhere.exe)
+    set(VSWHERE_URL_HASH SHA256=c54f3b7c9164ea9a0db8641e81ecdda80c2664ef5a47c4191406f848cc07c662)
+    set(VSWHERE_INSTALL_PATH "${CMAKE_CURRENT_BINARY_DIR}/vendor/vswhere")
 
-list(GET VSWHERE_DOWNLOAD_STATUS 0 RETURN_CODE)
+    file(DOWNLOAD ${VSWHERE_URL}
+        "${VSWHERE_INSTALL_PATH}/vswhere.exe"
+        STATUS VSWHERE_DOWNLOAD_STATUS
+        EXPECTED_HASH ${VSWHERE_URL_HASH}
+    )
 
-if(NOT RETURN_CODE EQUAL 0)
-    list(GET VSWHERE_DOWNLOAD_STATUS 1 RETURN_MESSAGE)
-    message(FATAL_ERROR "vswhere couldn't be downloaded: ${RETURN_MESSAGE}")
+    list(GET VSWHERE_DOWNLOAD_STATUS 0 RETURN_CODE)
+
+    if(NOT RETURN_CODE EQUAL 0)
+        list(GET VSWHERE_DOWNLOAD_STATUS 1 RETURN_MESSAGE)
+        message(FATAL_ERROR "vswhere wasn't found on the system and couldn't be downloaded: ${RETURN_MESSAGE}")
+    endif()
+
+    unset(VSWHERE_URL_HASH)
+    unset(VSWHERE_URL)
+    unset(VSWHERE_VERSION)
 endif()
 
-unset(VSWHERE_URL_HASH)
-unset(VSWHERE_URL)
-unset(VSWHERE_VERSION)
 
 set(VSWHERE_REQUIRES
     Microsoft.VisualStudio.Workload.MSBuildTools
@@ -53,7 +60,7 @@ endif()
 
 cmake_path(NORMAL_PATH VS17_INSTALL_PATH)
 
-list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${VS17_INSTALL_PATH}/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja")
+list(APPEND CMAKE_PROGRAM_PATH "${VS17_INSTALL_PATH}/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja")
 
 file(READ "${VS17_INSTALL_PATH}/VC/Auxiliary/Build/Microsoft.VCToolsVersion.default.txt" VS17_MSVC_VERSION LIMIT_COUNT 1)
 
@@ -64,10 +71,13 @@ endif()
 string(STRIP ${VS17_MSVC_VERSION} VS17_MSVC_VERSION)
 
 set(VS17_MSVC_INSTALL_PATH "${VS17_INSTALL_PATH}/VC/Tools/MSVC/${VS17_MSVC_VERSION}")
-list(APPEND CMAKE_SYSTEM_LIBRARY_PATH "${VS17_MSVC_INSTALL_PATH}/lib/x64")
-list(APPEND CMAKE_SYSTEM_INCLUDE_PATH "${VS17_MSVC_INSTALL_PATH}/include")
+
+add_standard_link_directories("${VS17_MSVC_INSTALL_PATH}/lib/x64")
+add_standard_include_directories("${VS17_MSVC_INSTALL_PATH}/include")
+
+set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded$<$<CONFIG:Debug>:Debug>)
 
 set(VS17_LLVM_INSTALL_PATH "${VS17_INSTALL_PATH}/VC/Tools/Llvm/x64/bin")
-set(CMAKE_C_COMPILER "${VS17_LLVM_INSTALL_PATH}/clang-cl.exe")
+set_compiler("${VS17_LLVM_INSTALL_PATH}/clang-cl.exe")
 set(CMAKE_LINKER_TYPE LLD)
 set(CMAKE_RC_COMPILER "${VS17_LLVM_INSTALL_PATH}/llvm-rc.exe")

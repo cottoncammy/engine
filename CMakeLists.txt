@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.50 FATAL_ERROR)
 project(engine VERSION 0.0.0 LANGUAGES C)
 
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows" OR NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "AMD64")
-    message(FATAL_ERROR "only 64-bit x86 Windows builds are supported")
+    message(FATAL_ERROR "only builds targeting 64-bit x86 Windows systems are supported")
 endif()
 
 if($<NOT:$<C_COMPILER_ID:Clang>> OR NOT CMAKE_C_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
@@ -11,7 +11,7 @@ if($<NOT:$<C_COMPILER_ID:Clang>> OR NOT CMAKE_C_COMPILER_FRONTEND_VARIANT STREQU
 endif()
 
 if(NOT CMAKE_GENERATOR STREQUAL "Ninja")
-    message(FATAL_ERROR "only the Ninja build generartor is supported")
+    message(FATAL_ERROR "only the Ninja build generator is supported")
 endif()
 
 if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
@@ -28,8 +28,6 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
     set(DEFINED_CMAKE_BUILD_TYPE TRUE)
 endif()
-
-set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded$<$<CONFIG:Debug>:Debug>)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
