@@ -15,8 +15,8 @@ option(WINDOWS_X86_X64_SYSROOT "Path to the Windows x86_64 sysroot on the host s
 option(DOWNLOAD_WINDOWS_X86_X64_SYSROOT "Download the Windows x86_64 sysroot using xwin if the given sysroot path at WINDOWS_X86_X64_SYSROOT is not found on the host system" OFF)
 option(KEEP_XWIN_BIN "Whether to install the vendored xwin binary to CMAKE_STAGING_PREFIX if it's not found on the host system when the given Windows x86_64 sysroot path also isn't found" OFF)
 
-if(KEEP_XWIN_BIN AND NOT DEFINED CMAKE_STAGING_PREFIX)
-    message(FATAL_ERROR "CMAKE_STAGING_PREFIX should be defined if KEEP_XWIN_BIN is ON")
+if(KEEP_XWIN_BIN AND NOT CMAKE_STAGING_PREFIX)
+    message(FATAL_ERROR "CMAKE_STAGING_PREFIX should be set if KEEP_XWIN_BIN is ON")
 endif()
 
 set(WINDOWS_X86_X64_FIND_ROOT_PATH "${CMAKE_INSTALL_PREFIX}")
@@ -43,7 +43,7 @@ if(NOT EXISTS WINDOWS_X86_X64_SYSROOT AND DOWNLOAD_WINDOWS_X86_X64_SYSROOT)
 
         if(KEEP_XWIN_BIN)
             set(CARGO_COMMAND install xwin --root "${CMAKE_STAGING_PREFIX}" --path vendor/xwin)
-            set(XWIN_BIN "${CMAKE_STAGING_PREFIX}/xwin")
+            set(XWIN_BIN "${CMAKE_STAGING_PREFIX}/bin/xwin")
         else()
             set(CARGO_COMMAND build --manifest-path vendor/xwin --release)
             set(XWIN_BIN "${CMAKE_CURRENT_BINARY_DIR}/vendor/xwin")

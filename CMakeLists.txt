@@ -24,7 +24,7 @@ elseif(BUILD_SHARED_LIBS)
     message(FATAL_ERROR "shared library builds aren't supported")
 endif()
 
-if(NOT DEFINED CMAKE_BUILD_TYPE)
+if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
     set(DEFINED_CMAKE_BUILD_TYPE TRUE)
 endif()
