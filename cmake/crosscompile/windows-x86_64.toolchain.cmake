@@ -25,8 +25,6 @@ if(NOT EXISTS WINDOWS_X86_X64_SYSROOT AND DOWNLOAD_WINDOWS_X86_X64_SYSROOT)
     find_program(XWIN_BIN
         xwin
         OPTIONAL
-        NO_CMAKE_ENVIRONMENT_PATH
-        NO_SYSTEM_ENVIRONMENT_PATH
     )
 
     if(DEFINED XWIN_BIN)
@@ -36,8 +34,6 @@ if(NOT EXISTS WINDOWS_X86_X64_SYSROOT AND DOWNLOAD_WINDOWS_X86_X64_SYSROOT)
         find_program(CARGO_BIN
             cargo
             REQUIRED
-            NO_CMAKE_ENVIRONMENT_PATH
-            NO_SYSTEM_ENVIRONMENT_PATH
         )
 
         if(KEEP_XWIN_BIN)
@@ -47,7 +43,6 @@ if(NOT EXISTS WINDOWS_X86_X64_SYSROOT AND DOWNLOAD_WINDOWS_X86_X64_SYSROOT)
             set(CARGO_COMMAND build --manifest-path vendor/xwin --release)
             set(XWIN_BIN "${CMAKE_CURRENT_BINARY_DIR}/vendor/xwin")
         endif()
-        unset(KEEP_XWIN)
 
         execute_process(COMMAND
             "${CARGO_BIN}" ${CARGO_COMMAND} --bin xwin --features native-tls --target x86_64-unknown-linux-gnu --target-dir "${CMAKE_CURRENT_BINARY_DIR}/vendor/xwin" --frozen
@@ -55,9 +50,7 @@ if(NOT EXISTS WINDOWS_X86_X64_SYSROOT AND DOWNLOAD_WINDOWS_X86_X64_SYSROOT)
             COMMAND_ERROR_IS_FATAL ANY
         )
 
-        unset(CARGO_COMMAND)
         xwin_splat("${XWIN_BIN}")
-        unset(XWIN_BIN)
     endif()
 elseif(NOT EXISTS WINDOWS_X86_X64_SYSROOT)
     message(FATAL_ERROR "the given path to the Windows x86_64 sysroot at WINDOWS_X86_X64_SYSROOT was not found on the host system and DOWNLOAD_WINDOWS_X86_X64_SYSROOT is OFF")
@@ -69,8 +62,6 @@ set(triple x86_64-pc-windows-msvc)
 
 set(CMAKE_SYSROOT "${WINDOWS_X86_X64_SYSROOT}")
 set(CMAKE_FIND_ROOT_PATH "${WINDOWS_X86_X64_FIND_ROOT_PATH}")
-unset(WINDOWS_X86_X64_SYSROOT)
-unset(WINDOWS_X86_X64_FIND_ROOT_PATH)
 
 set(CMAKE_C_COMPILER clang)
 set(CMAKE_C_COMPILER_TARGET ${triple})

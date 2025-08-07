@@ -2,6 +2,9 @@
 	path = vendor/SDL
 	url = https://github.com/libsdl-org/SDL
 	branch = release-3.2.x
+[submodule "SDL_shadercross"]
+	path = vendor/SDL_shadercross
+	url = https://github.com/libsdl-org/SDL_shadercross.git
 [submodule "xwin"]
 	path = vendor/xwin
 	url = https://github.com/Jake-Shadle/xwin.git

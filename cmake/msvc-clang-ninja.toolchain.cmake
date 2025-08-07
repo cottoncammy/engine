@@ -22,10 +22,6 @@ if(NOT EXISTS "${VSWHERE_INSTALL_PATH}")
         list(GET VSWHERE_DOWNLOAD_STATUS 1 RETURN_MESSAGE)
         message(FATAL_ERROR "vswhere wasn't found on the system and couldn't be downloaded: ${RETURN_MESSAGE}")
     endif()
-
-    unset(VSWHERE_URL_HASH)
-    unset(VSWHERE_URL)
-    unset(VSWHERE_VERSION)
 endif()
 
 set(VSWHERE_REQUIRES
@@ -47,8 +43,6 @@ execute_process(COMMAND
     OUTPUT_STRIP_TRAILING_WHITESPACE
     COMMAND_ERROR_IS_FATAL ANY
 )
-unset(VSWHERE_REQUIRES)
-unset(VSWHERE_INSTALL_PATH)
 
 if(NOT VS17_INSTALL_PATH)
     message(FATAL_ERROR "vswhere couldn't find an installation of Visual Studio 17 Build Tools with the required workloads and components")
