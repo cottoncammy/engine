@@ -70,7 +70,7 @@ target_link_libraries(engine PRIVATE
 
 # install engine binary
 include(GNUInstallDirs)
-set(CONFIG_INSTALL_DIR "${CMAKE_INSTALL_BINDIR}/cmake/engine")
+set(CONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/engine")
 
 install(TARGETS engine
     EXPORT engine-targets
