@@ -50,7 +50,7 @@ if(NOT SDL3_shadercross_FOUND AND SDL3_shadercross_FIND_REQUIRED)
     if(NOT SDLSHADERCROSS_VENDORED_DEPENDENCIES)
         # the Vulkan SDK includes spirv-cross-c-shared
         include(FindVulkan)
-        find_package(Vulkan COMPONENTS SPIRV-Tools dxc)
+        find_package(Vulkan COMPONENTS SPIRV-Tools)
         if(Vulkan_FOUND)
             # set cache variables so Findspirv_cross_c_shared.cmake can use them
             set(Vulkan_FOUND ${Vulkan_FOUND} CACHE BOOL "")
