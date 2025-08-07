@@ -6,7 +6,6 @@ function(xwin_splat XWIN_EXE)
     )
 endfunction()
 
-
 if(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
     message(FATAL_ERROR "cross compiling to Windows x86_64 is only supported on Linux")
 endif()
@@ -70,7 +69,6 @@ set(triple x86_64-pc-windows-msvc)
 
 set(CMAKE_SYSROOT "${WINDOWS_X86_X64_SYSROOT}")
 set(CMAKE_FIND_ROOT_PATH "${WINDOWS_X86_X64_FIND_ROOT_PATH}")
-
 unset(WINDOWS_X86_X64_SYSROOT)
 unset(WINDOWS_X86_X64_FIND_ROOT_PATH)
 

@@ -5,7 +5,6 @@ if(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows" OR NOT CMAKE_HOST_SYSTEM_PROCES
 endif()
 
 set(VSWHERE_INSTALL_PATH "$ENV{ProgramFiles\(x86\)}/Microsoft Visual Studio/Installer")
-
 if(NOT EXISTS "${VSWHERE_INSTALL_PATH}")
     set(VSWHERE_VERSION 3.1.7)
     set(VSWHERE_URL https://github.com/microsoft/vswhere/releases/download/${VSWHERE_VERSION}/vswhere.exe)
@@ -19,7 +18,6 @@ if(NOT EXISTS "${VSWHERE_INSTALL_PATH}")
     )
 
     list(GET VSWHERE_DOWNLOAD_STATUS 0 RETURN_CODE)
-
     if(NOT RETURN_CODE EQUAL 0)
         list(GET VSWHERE_DOWNLOAD_STATUS 1 RETURN_MESSAGE)
         message(FATAL_ERROR "vswhere wasn't found on the system and couldn't be downloaded: ${RETURN_MESSAGE}")
@@ -29,7 +27,6 @@ if(NOT EXISTS "${VSWHERE_INSTALL_PATH}")
     unset(VSWHERE_URL)
     unset(VSWHERE_VERSION)
 endif()
-
 
 set(VSWHERE_REQUIRES
     Microsoft.VisualStudio.Workload.MSBuildTools
@@ -50,7 +47,6 @@ execute_process(COMMAND
     OUTPUT_STRIP_TRAILING_WHITESPACE
     COMMAND_ERROR_IS_FATAL ANY
 )
-
 unset(VSWHERE_REQUIRES)
 unset(VSWHERE_INSTALL_PATH)
 
@@ -59,19 +55,15 @@ if(NOT VS17_INSTALL_PATH)
 endif()
 
 cmake_path(NORMAL_PATH VS17_INSTALL_PATH)
-
 list(APPEND CMAKE_PROGRAM_PATH "${VS17_INSTALL_PATH}/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja")
 
 file(READ "${VS17_INSTALL_PATH}/VC/Auxiliary/Build/Microsoft.VCToolsVersion.default.txt" VS17_MSVC_VERSION LIMIT_COUNT 1)
-
 if(NOT VS17_MSVC_VERSION)
     message(FATAL_ERROR "the installed version of MSVC couldn't be determined")
 endif()
-
 string(STRIP ${VS17_MSVC_VERSION} VS17_MSVC_VERSION)
 
 set(VS17_MSVC_INSTALL_PATH "${VS17_INSTALL_PATH}/VC/Tools/MSVC/${VS17_MSVC_VERSION}")
-
 add_standard_link_directories("${VS17_MSVC_INSTALL_PATH}/lib/x64")
 add_standard_include_directories("${VS17_MSVC_INSTALL_PATH}/include")
 

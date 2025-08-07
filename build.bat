@@ -10,6 +10,5 @@ cmake --install build --prefix "%SOURCE_DIR%/target" || goto error
 
 exit /b 0
 
-
 :error
 exit /b %errorlevel%
