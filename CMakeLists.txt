@@ -33,14 +33,30 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-# find dependencies
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
-
+# find dependencies or build them
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(WANTED_SDL3_VERSION 3.2)
 set(WANTED_SDL3_SHADERCROSS_VERSION 3.0)
 
-find_package(SDL3 ${WANTED_SDL3_VERSION} REQUIRED)
-find_package(SDL3_shadercross ${WANTED_SDL3_SHADERCROSS_VERSION} REQUIRED)
+find_package(SDL3 ${WANTED_SDL3_VERSION} QUIET)
+if(NOT SDL3_FOUND)
+    set(SDL_DEPS_SHARED OFF)
+    set(SDL_INSTALL ON)
+    set(SDL_HIDAPI OFF)
+    set(SDL_SHARED OFF)
+    set(SDL_TEST_LIBRARY OFF)
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/vendor/SDL")
+endif()
+
+find_package(SDL3_shadercross ${WANTED_SDL3_SHADERCROSS_VERSION} QUIET)
+if(NOT SDL3_shadercross_FOUND)
+    # can't build from source for the host machine to run when cross-compiling
+    if(CMAKE_CROSSCOMPILING)
+        message(FATAL_ERROR "SDL3_shadercross was not found and cannot be built for the host system during cross-compilation")
+    endif()
+
+    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/build-SDL3-shadercross.cmake")
+endif()
 
 # configure engine binary
 add_executable(engine)
@@ -128,10 +144,7 @@ configure_package_config_file("${CMAKE_CURRENT_LIST_DIR}/cmake/engine-config.cma
     INSTALL_DESTINATION "${CONFIG_INSTALL_DIR}"
     NO_SET_AND_CHECK_MACRO
 )
-install(FILES "${CMAKE_CURRENT_LIST_DIR}/cmake/check-paths.cmake"
-    "${CMAKE_CURRENT_LIST_DIR}/cmake/FindSDL3.cmake"
-    "${CMAKE_CURRENT_LIST_DIR}/cmake/FindSDL3_shadercross.cmake"
-    "${CMAKE_CURRENT_BINARY_DIR}/engine-config.cmake"
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/engine-config.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/engine-config-version.cmake"
     DESTINATION "${CONFIG_INSTALL_DIR}"
 )
