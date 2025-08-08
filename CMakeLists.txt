@@ -128,7 +128,8 @@ configure_package_config_file("${CMAKE_CURRENT_LIST_DIR}/cmake/engine-config.cma
     INSTALL_DESTINATION "${CONFIG_INSTALL_DIR}"
     NO_SET_AND_CHECK_MACRO
 )
-install(FILES "${CMAKE_CURRENT_LIST_DIR}/cmake/FindSDL3.cmake"
+install(FILES "${CMAKE_CURRENT_LIST_DIR}/cmake/check-paths.cmake"
+    "${CMAKE_CURRENT_LIST_DIR}/cmake/FindSDL3.cmake"
     "${CMAKE_CURRENT_LIST_DIR}/cmake/FindSDL3_shadercross.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/engine-config.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/engine-config-version.cmake"

@@ -45,25 +45,27 @@ execute_process(COMMAND
 )
 
 if(NOT VS17_INSTALL_PATH)
-    message(FATAL_ERROR "vswhere couldn't find an installation of Visual Studio 17 Build Tools with the required workloads and components")
+    message(FATAL_ERROR "vswhere couldn't find an installation of Visual Studio 17 Build Tools with the workloads and components required to build this project")
 endif()
-
 cmake_path(NORMAL_PATH VS17_INSTALL_PATH)
-list(APPEND CMAKE_PROGRAM_PATH "${VS17_INSTALL_PATH}/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja")
 
-file(READ "${VS17_INSTALL_PATH}/VC/Auxiliary/Build/Microsoft.VCToolsVersion.default.txt" VS17_MSVC_VERSION LIMIT_COUNT 1)
+include("${CMAKE_CURRENT_LIST_DIR}/check-paths.cmake")
+set_and_append_paths(CMAKE_PROGRAM_PATH "${VS17_INSTALL_PATH}/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja")
+
+set_and_check_path(VS17_MSVC_VERSION_FILE_PATH "${VS17_INSTALL_PATH}/VC/Auxiliary/Build/Microsoft.VCToolsVersion.default.txt")
+file(READ "${VS17_MSVC_VERSION_FILE_PATH}" VS17_MSVC_VERSION LIMIT_COUNT 1)
 if(NOT VS17_MSVC_VERSION)
     message(FATAL_ERROR "the installed version of MSVC couldn't be determined")
 endif()
 string(STRIP ${VS17_MSVC_VERSION} VS17_MSVC_VERSION)
 
-set(VS17_MSVC_INSTALL_PATH "${VS17_INSTALL_PATH}/VC/Tools/MSVC/${VS17_MSVC_VERSION}")
+set_and_check_path(VS17_MSVC_INSTALL_PATH "${VS17_INSTALL_PATH}/VC/Tools/MSVC/${VS17_MSVC_VERSION}")
 add_standard_link_directories("${VS17_MSVC_INSTALL_PATH}/lib/x64")
 add_standard_include_directories("${VS17_MSVC_INSTALL_PATH}/include")
 
 set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded$<$<CONFIG:Debug>:Debug>)
 
-set(VS17_LLVM_INSTALL_PATH "${VS17_INSTALL_PATH}/VC/Tools/Llvm/x64/bin")
+set_and_check_path(VS17_LLVM_INSTALL_PATH "${VS17_INSTALL_PATH}/VC/Tools/Llvm/x64/bin")
 set_compiler("${VS17_LLVM_INSTALL_PATH}/clang-cl.exe")
 set(CMAKE_LINKER_TYPE LLD)
 set(CMAKE_RC_COMPILER "${VS17_LLVM_INSTALL_PATH}/llvm-rc.exe")

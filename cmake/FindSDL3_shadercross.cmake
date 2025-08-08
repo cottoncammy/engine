@@ -1,10 +1,7 @@
-function(enable_sdl_shadercross_vendored_dependencies)
-    if(NOT ARGC EQUAL 0)
-        message(FATAL_ERROR "unknown args were passed to enable_sdl_shadercross_vendored_dependencies")
-    endif()
-    set(SDLSHADERCROSS_SPIRVCROSS_SHARED OFF PARENT_SCOPE)
-    set(SDLSHADERCROSS_VENDORED_DEPENDENCIES ON PARENT_SCOPE)
-endfunction()
+macro(enable_sdl_shadercross_vendored_dependencies)
+    set(SDLSHADERCROSS_SPIRVCROSS_SHARED OFF)
+    set(SDLSHADERCROSS_VENDORED_DEPENDENCIES ON)
+endmacro()
 
 if(SDL3_shadercross_FIND_QUIETLY)
     set(SDL3_shadercross_FIND_QUIET QUIET)
@@ -25,6 +22,7 @@ find_package(SDL3_shadercross
 
 # just build it from source
 if(NOT SDL3_shadercross_FOUND AND SDL3_shadercross_FIND_REQUIRED)
+    # unless it's a cross-compilation build
     if(CMAKE_CROSSCOMPILING)
         message(FATAL_ERROR "SDL3_shadercross was not found on the host system and cannot be built from source during cross-compilation for use at build time")
     endif()
@@ -35,7 +33,7 @@ if(NOT SDL3_shadercross_FOUND AND SDL3_shadercross_FIND_REQUIRED)
     # the Windows SDK required to build this project when targeting Windows includes dxcompiler and dxil
     if(NOT WINDOWS_SDK_INCLUDE_PATH OR NOT WINDOWS_SDK_BIN_PATH OR NOT WINDOWS_SDK_LIB_PATH)
         if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
-            message(FATAL_ERROR "the Windows SDK wasn't located on the host system")
+            message(FATAL_ERROR "the Windows SDK locations weren't found in the CMake cache")
         else()
             enable_sdl_shadercross_vendored_dependencies()
         endif()
@@ -56,14 +54,20 @@ if(NOT SDL3_shadercross_FOUND AND SDL3_shadercross_FIND_REQUIRED)
         # the Vulkan SDK includes spirv-cross-c-shared
         include(FindVulkan)
         find_package(Vulkan COMPONENTS SPIRV-Tools)
-        if(Vulkan_FOUND)
+        set(WANTED_VULKAN_VERSION 1.4.321)
+        if(Vulkan_FOUND AND Vulkan_VERSION VERSION_GREATER_EQUAL ${WANTED_VULKAN_VERSION})
             # set cache variables so Findspirv_cross_c_shared.cmake can use them
             set(Vulkan_FOUND ${Vulkan_FOUND} CACHE BOOL "")
             cmake_path(GET Vulkan_LIBRARY PARENT_PATH VULKAN_LIB_PATH)
             set(VULKAN_LIB_PATH "${VULKAN_LIB_PATH}" CACHE PATH "")
             cmake_path(GET VULKAN_LIB_PATH PARENT_PATH VULKAN_INSTALL_PATH)
-            set(VULKAN_BIN_PATH "${VULKAN_INSTALL_PATH}/Bin" CACHE PATH "")
-        else()
+
+            include("${CMAKE_CURRENT_LIST_DIR}/check-paths.cmake")
+            set_and_check_path(VULKAN_BIN_PATH "${VULKAN_INSTALL_PATH}/Bin" CACHE PATH "")
+        elseif(Vulkan_FOUND AND Vulkan_VERSION VERSION_LESS ${WANTED_VULKAN_VERSION})
+            message(AUTHOR_WARNING "Found a version of the Vulkan SDK (${Vulkan_VERSION}) less than the wanted version (${WANTED_VULKAN_VERSION}), building SDL3_shadercross with vendored dependencies instead")
+            enable_sdl_shadercross_vendored_dependencies()
+        elseif(NOT Vulkan_FOUND)
             enable_sdl_shadercross_vendored_dependencies()
         endif()
     endif()
@@ -77,6 +81,7 @@ if(NOT SDL3_shadercross_FOUND AND SDL3_shadercross_FIND_REQUIRED)
     set(SDL3_shadercross_INSTALL_PATH "${SDL3_shadercross_BINARY_DIR}")
     set(SDL3_shadercross_VERSION 3.0.0)
 elseif(SDL3_shadercross_FOUND)
+    # TODO how do we make sure the package includes the cli?
     get_target_property(SDL3_shadercross_INSTALL_PATH SDL3_shadercross::SDL3_shadercross LOCATION)
 endif()
 

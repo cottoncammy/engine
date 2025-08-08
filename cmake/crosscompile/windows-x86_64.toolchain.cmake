@@ -1,10 +1,10 @@
-function(xwin_splat XWIN_EXE)
+macro(xwin_splat XWIN_EXE)
     execute_process(COMMAND
         "${XWIN_EXE}" --accept-license --arch x86_64 --cache-dir .xwin-cache --manifest-version 17 splat --output "${WINDOWS_X86_X64_SYSROOT}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
         COMMAND_ERROR_IS_FATAL ANY
     )
-endfunction()
+endmacro()
 
 if(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
     message(FATAL_ERROR "cross compiling to Windows x86_64 is only supported on Linux")
@@ -53,7 +53,7 @@ if(NOT EXISTS WINDOWS_X86_X64_SYSROOT AND DOWNLOAD_WINDOWS_X86_X64_SYSROOT)
         xwin_splat("${XWIN_BIN}")
     endif()
 elseif(NOT EXISTS WINDOWS_X86_X64_SYSROOT)
-    message(FATAL_ERROR "the given path to the Windows x86_64 sysroot at WINDOWS_X86_X64_SYSROOT was not found on the host system and DOWNLOAD_WINDOWS_X86_X64_SYSROOT is OFF")
+    message(FATAL_ERROR "the given path to the Windows x86_64 sysroot (${WINDOWS_X86_X64_SYSROOT}) doesn't exist on the host system and DOWNLOAD_WINDOWS_X86_X64_SYSROOT is OFF")
 endif()
 
 set(CMAKE_SYSTEM_NAME Windows)

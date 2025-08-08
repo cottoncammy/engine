@@ -1,11 +1,21 @@
 if(Vulkan_FOUND)
+    if(NOT Vulkan_INCLUDE_DIR OR NOT VULKAN_BIN_PATH OR NOT VULKAN_LIB_PATH)
+        message(FATAL_ERROR "the Vulkan SDK locations weren't found in the CMake cache")
+    endif()
+
+    include("${CMAKE_CURRENT_LIST_DIR}/check-paths.cmake")
+    check_path("${Vulkan_INCLUDE_DIR}")
+
     add_library(spirv-cross-c-shared SHARED IMPORTED)
-    set_target_properties(spirv-cross-c-shared PROPERTIES
-        IMPORTED_LOCATION "${VULKAN_BIN_PATH}/spirv-cross-c-shared${CMAKE_SHARED_LIBRARY_SUFFIX}"
-        INTERFACE_INCLUDE_DIRECTORIES "${Vulkan_INCLUDE_DIR}/spirv_cross"
-    )
+    set_property(TARGET spirv-cross-c-shared PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${Vulkan_INCLUDE_DIR}/spirv_cross")
     if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
-        set_property(TARGET spirv-cross-c-shared PROPERTY IMPORTED_IMPLIB "${VULKAN_LIB_PATH}/spirv-cross-c-shared.lib")
+        set_target_properties(spirv-cross-c-shared PROPERTIES
+            IMPORTED_LOCATION "${VULKAN_BIN_PATH}/spirv-cross-c-shared.dll"
+            IMPORTED_IMPLIB "${VULKAN_LIB_PATH}/spirv-cross-c-shared.lib"
+        )
+    else()
+        # TODO
+        set_property(TARGET spirv-cross-c-shared PROPERTY IMPORTED_LOCATION "${VULKAN_LIB_PATH}/TODO")
     endif()
     set(spirv-cross-c-shared_FOUND TRUE)
 endif()

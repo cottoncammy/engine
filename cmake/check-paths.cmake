@@ -1,0 +1,21 @@
+macro(check_path PATH_VAR)
+    if(NOT EXISTS "${PATH_VAR}")
+        message(FATAL_ERROR "path ${PATH_VAR} doesn't exist on the host system")
+    endif()
+endmacro()
+
+macro(check_paths)
+    foreach(PATH_VAR IN LISTS ${ARGN})
+        check_path("${PATH_VAR}")
+    endforeach()
+endmacro()
+
+macro(set_and_check_path OUT_VAR PATH_VAR)
+    check_path("${PATH_VAR}")
+    set(${OUT_VAR} "${PATH_VAR}")
+endmacro()
+
+macro(set_and_append_paths OUT_VAR)
+    check_paths(${ARGN})
+    list(APPEND ${OUT_VAR} ${ARGN})
+endmacro()
