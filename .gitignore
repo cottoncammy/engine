@@ -1,5 +1,4 @@
 /.cache
 CMakeUserPresets.json
-cmake-profiling-data.json
 /build
 /target
