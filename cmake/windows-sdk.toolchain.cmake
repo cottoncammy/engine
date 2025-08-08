@@ -25,6 +25,11 @@ if(NOT WINDOWS_SDK_ROOTS OR REGISTRY_QUERY_RESULT)
     message(FATAL_ERROR "failed to query the Windows registry for the list of installed Windows SDK versions: ${REGISTRY_QUERY_RESULT}")
 endif()
 
+list(LENGTH WINDOWS_SDK_ROOTS WINDOWS_SDK_ROOTS_LENGTH)
+if(WINDOWS_SDK_ROOTS_LENGTH EQUAL 0)
+    message(FATAL_ERROR "no Windows SDKs were found in the registry")
+endif()
+
 list(SORT WINDOWS_SDK_ROOTS ORDER DESCENDING)
 list(GET WINDOWS_SDK_ROOTS 0 WINDOWS_SDK_VERSION)
 
