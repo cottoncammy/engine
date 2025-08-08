@@ -17,9 +17,11 @@ find_package(SDL3
 # just build it from source
 if(NOT SDL3_FOUND AND SDL3_FIND_REQUIRED)
     set(SDL_DEPS_SHARED OFF)
+    set(SDL_INSTALL ON)
+    set(SDL_HIDAPI OFF)
     set(SDL_SHARED OFF)
     set(SDL_TEST_LIBRARY OFF)
-    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/vendor/SDL" EXCLUDE_FROM_ALL)
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/vendor/SDL")
 
     set(SDL3_INSTALL_PATH "${SDL3_BINARY_DIR}")
     set(SDL3_VERSION 3.2.20)

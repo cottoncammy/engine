@@ -20,10 +20,15 @@ find_package(SDL3_shadercross
     ${SDL3_shadercross_FIND_EXACT}
     ${SDL3_shadercross_FIND_QUIET}
     CONFIG
+    NO_CMAKE_FIND_ROOT_PATH
 )
 
 # just build it from source
 if(NOT SDL3_shadercross_FOUND AND SDL3_shadercross_FIND_REQUIRED)
+    if(CMAKE_CROSSCOMPILING)
+        message(FATAL_ERROR "SDL3_shadercross was not found on the host system and cannot be built from source during cross-compilation for use at build time")
+    endif()
+
     set(SDL3_shadercross_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/SDL_shadercross")
 
     # determine whether we need to enable vendored dependencies
@@ -66,12 +71,13 @@ if(NOT SDL3_shadercross_FOUND AND SDL3_shadercross_FIND_REQUIRED)
     if(SDL3_SDL3-static_FOUND OR TARGET SDL3::SDL3-static)
         set(SDLSHADERCROSS_CLI_STATIC ON)
     endif()
+    set(SDLSHADERCROSS_INSTALL ON)
+    add_subdirectory("${SDL3_shadercross_SOURCE_DIR}")
 
-    add_subdirectory("${SDL3_shadercross_SOURCE_DIR}" EXCLUDE_FROM_ALL)
     set(SDL3_shadercross_INSTALL_PATH "${SDL3_shadercross_BINARY_DIR}")
     set(SDL3_shadercross_VERSION 3.0.0)
 elseif(SDL3_shadercross_FOUND)
-    set(SDL3_shadercross_INSTALL_PATH TODO)
+    get_target_property(SDL3_shadercross_INSTALL_PATH SDL3_shadercross::SDL3_shadercross LOCATION)
 endif()
 
 include(FindPackageHandleStandardArgs)

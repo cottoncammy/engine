@@ -7,8 +7,12 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows" OR NOT CMAKE_SYSTEM_PROCESSOR STREQU
     message(FATAL_ERROR "only builds targeting 64-bit x86 Windows are supported")
 endif()
 
-if($<NOT:$<C_COMPILER_ID:Clang>> OR NOT CMAKE_C_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang" OR NOT CMAKE_C_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
     message(FATAL_ERROR "only the clang-cl C compiler is supported")
+endif()
+
+if(DEFINED CMAKE_CXX_COMPILER_ID AND (NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR NOT CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC"))
+    message(FATAL_ERROR "only the clang-cl C++ compiler is supported")
 endif()
 
 if(NOT CMAKE_GENERATOR STREQUAL "Ninja")
@@ -27,10 +31,6 @@ endif()
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
-endif()
-
-if(NOT CMAKE_EXPORT_PACKAGE_REGISTRY)
-    set(CMAKE_EXPORT_PACKAGE_REGISTRY ON)
 endif()
 
 # find dependencies
@@ -68,9 +68,40 @@ target_link_libraries(engine PRIVATE
     SDL3::SDL3
 )
 
+# compile shaders
+set(SHADERCROSS_INPUT_FILES
+    assets/shaders/foo.vert.hlsl
+)
+set(SHADERCROSS_OUTPUT_FILES)
+
+foreach(SHADERCROSS_INPUT_FILE IN LISTS SHADERCROSS_INPUT_FILES)
+    cmake_path(APPEND CMAKE_CURRENT_SOURCE_DIR "${SHADERCROSS_INPUT_FILE}" OUTPUT_VARIABLE SHADERCROSS_INPUT_FILE)
+    foreach(SHADER_FORMAT DXIL SPIRV)
+        cmake_path(GET SHADERCROSS_INPUT_FILE FILENAME SHADERCROSS_INPUT_FILENAME)
+        cmake_path(REMOVE_EXTENSION
+            SHADERCROSS_INPUT_FILENAME
+            LAST_ONLY
+            OUTPUT_VARIABLE SHADERCROSS_OUTPUT_FILENAME
+        )
+        set(SHADERCROSS_OUTPUT_FILE "${CMAKE_CURRENT_BINARY_DIR}/shaders/${SHADERCROSS_OUTPUT_FILENAME}.$<IF:$<STREQUAL:SHADER_FORMAT,DXIL>,dxil,spv>")
+        list(APPEND SHADERCROSS_OUTPUT_FILES "${SHADERCROSS_OUTPUT_FILE}")
+
+        add_custom_command(COMMAND
+            shadercross "${SHADERCROSS_INPUT_FILE}" -o "${SHADERCROSS_OUTPUT_FILE}"
+            OUTPUT "${SHADERCROSS_OUTPUT_FILE}"
+            DEPENDS "${SHADERCROSS_INPUT_FILE}"
+            COMMENT "Compiling ${SHADERCROSS_INPUT_FILE} to ${SHADERCROSS_OUTPUT_FILE}"
+            VERBATIM
+        )
+    endforeach()
+endforeach()
+
+add_custom_target(shaders DEPENDS ${SHADERCROSS_OUTPUT_FILES})
+add_dependencies(engine shaders)
+
 # install engine binary
 include(GNUInstallDirs)
-set(CONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/engine")
+set(CONFIG_INSTALL_DIR "cmake")
 
 install(TARGETS engine
     EXPORT engine-targets
@@ -82,7 +113,10 @@ install(EXPORT engine-targets
     NAMESPACE cottoncammy::
     FILE engine-targets.cmake
 )
+# install shaders
+install(FILES ${SHADERCROSS_OUTPUT_FILES} DESTINATION "${CMAKE_INSTALL_DATADIR}/shaders")
 
+# install CMake config files
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
     engine-config-version.cmake
@@ -94,7 +128,6 @@ configure_package_config_file("${CMAKE_CURRENT_LIST_DIR}/cmake/engine-config.cma
     INSTALL_DESTINATION "${CONFIG_INSTALL_DIR}"
     NO_SET_AND_CHECK_MACRO
 )
-
 install(FILES "${CMAKE_CURRENT_LIST_DIR}/cmake/FindSDL3.cmake"
     "${CMAKE_CURRENT_LIST_DIR}/cmake/FindSDL3_shadercross.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/engine-config.cmake"
