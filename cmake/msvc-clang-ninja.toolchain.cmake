@@ -1,7 +1,7 @@
 include_guard(GLOBAL)
 
 if(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows" OR NOT CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "AMD64")
-    message(FATAL_ERROR "this toolchain file is only supported on 64-bit x86 Windows host systems")
+    message(FATAL_ERROR "this toolchain file is only supported on Windows x64")
 endif()
 
 set(VSWHERE_INSTALL_PATH "$ENV{ProgramFiles\(x86\)}/Microsoft Visual Studio/Installer")
