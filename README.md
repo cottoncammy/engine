@@ -13,6 +13,7 @@ The following free and open source software are used directly:
 * [SDL3](https://github.com/libsdl-org/SDL)
 * [SDL_shadercross](https://github.com/libsdl-org/SDL_shadercross)
 * [vswhere](https://github.com/microsoft/vswhere)
+* [wuffs](https://github.com/google/wuffs)
 * [xwin](https://github.com/Jake-Shadle/xwin)
 
 ## Development Environment
@@ -22,7 +23,7 @@ To build and run `engine`, you must be on Windows x64. You need the following bi
 * CMake ([download link](https://cmake.org/download))
 * Golang ([download link](https://go.dev/doc/install))
 
-Additionally, you need the build tools for Visual Studio 2022 ([download link](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022)). You will need the "Desktop development with C++" workload with the following additional optional components:
+Additionally, you need the build tools for Visual Studio 2022 ([download link](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022)). You will need the "Desktop development with C++" workload with the following additional components:
 
 * MSVC - VS 2022 C++ x64/x86 build tools (latest)
 * Windows 11 SDK (latest)
@@ -33,4 +34,4 @@ Additionally, you need the build tools for Visual Studio 2022 ([download link](h
 
 `engine` must be built from source using CMake. Currently, bulding `engine` is only supported on Windows x64 for Windows x64.
 
-Checkout using `git clone --recurse-submodules --shallow-submodules`, then run `./build.bat` to build and install the binary.
+Checkout using `git clone --recurse-submodules`, then run `./build.bat` to build and install the binary.

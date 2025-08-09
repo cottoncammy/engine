@@ -5,6 +5,10 @@
 [submodule "SDL_shadercross"]
 	path = vendor/SDL_shadercross
 	url = https://github.com/libsdl-org/SDL_shadercross.git
+[submodule "wuffs"]
+	path = vendor/wuffs
+	url = https://github.com/google/wuffs.git
+	branch = v0.3
 [submodule "xwin"]
 	path = vendor/xwin
 	url = https://github.com/Jake-Shadle/xwin.git
