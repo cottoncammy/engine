@@ -4,7 +4,7 @@ project(engine VERSION 0.0.0 LANGUAGES C)
 
 # check build config
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows" OR NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "AMD64")
-    message(FATAL_ERROR "only builds targeting 64-bit x86 Windows are supported")
+    message(FATAL_ERROR "only builds targeting Windows x64 are supported")
 endif()
 
 if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang" OR NOT CMAKE_C_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
