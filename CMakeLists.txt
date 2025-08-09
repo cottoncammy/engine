@@ -44,7 +44,7 @@ if(NOT SDL3_FOUND)
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/vendor/SDL")
 endif()
 
-find_package(SDL3_shadercross ${WANTED_SDL3_SHADERCROSS_VERSION} QUIET)
+find_package(SDL3_shadercross ${WANTED_SDL3_SHADERCROSS_VERSION} QUIET NO_CMAKE_FIND_ROOT_PATH)
 if(NOT SDL3_shadercross_FOUND)
     # can't build from source for the host machine to run when cross-compiling
     if(CMAKE_CROSSCOMPILING)

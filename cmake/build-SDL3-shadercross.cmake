@@ -36,7 +36,7 @@ if(NOT SDLSHADERCROSS_VENDORED_DEPENDENCIES)
         cmake_path(GET VULKAN_LIB_PATH PARENT_PATH VULKAN_INSTALL_PATH)
 
         include("${CMAKE_CURRENT_LIST_DIR}/check-paths.cmake")
-        set_and_check_path(VULKAN_BIN_PATH "${VULKAN_INSTALL_PATH}/Bin" CACHE PATH "")
+        cache_and_check_path(VULKAN_BIN_PATH "${VULKAN_INSTALL_PATH}/Bin")
     elseif(NOT Vulkan_FOUND)
         enable_sdl_shadercross_vendored_dependencies()
     endif()
