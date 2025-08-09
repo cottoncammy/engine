@@ -1,6 +1,6 @@
 macro(check_path PATH_VAR)
     if(NOT EXISTS "${PATH_VAR}")
-        message(FATAL_ERROR "path ${PATH_VAR} doesn't exist on the host system")
+        message(FATAL_ERROR "path ${PATH_VAR} doesn't exist")
     endif()
 endmacro()
 

@@ -11,11 +11,11 @@ if not "%1"=="" (
 )
 
 set "SOURCE_DIR=%~dp0"
+set "TARGET_DIR=%SOURCE_DIR%\target"
 
-cmake -S . -B build -G Ninja --toolchain "%SOURCE_DIR%/cmake/windows.toolchain.cmake" %1^
- || goto error
+cmake -S . -B build -G Ninja --toolchain "%SOURCE_DIR%\cmake\windows.toolchain.cmake" --install-prefix "%TARGET_DIR%" %1 || goto error
 cmake --build build || goto error
-cmake --install build --prefix "%SOURCE_DIR%/target" || goto error
+cmake --install build --prefix "%TARGET_DIR%" || goto error
 
 exit /b 0
 

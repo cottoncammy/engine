@@ -1,67 +1,52 @@
-macro(xwin_splat XWIN_EXE)
+macro(xwin_splat XWIN_BIN)
     execute_process(COMMAND
-        "${XWIN_EXE}" --accept-license --arch x86_64 --cache-dir .xwin-cache --manifest-version 17 splat --output "${WINDOWS_X86_X64_SYSROOT}"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+        "${XWIN_BIN}" --accept-license --arch x86_64 --cache-dir ./.xwin-cache --manifest-version 17 splat --output "${WINDOWS_X64_SYSROOT}"
+        WORKING_DIRECTORY "${CMAKE_STAGING_PREFIX}"
         COMMAND_ERROR_IS_FATAL ANY
     )
 endmacro()
 
 if(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
-    message(FATAL_ERROR "cross compiling to Windows x86_64 is only supported on Linux")
+    message(FATAL_ERROR "cross compiling to Windows x64 is only supported on Linux")
 endif()
 
-option(WINDOWS_X86_X64_SYSROOT "Path to the Windows x86_64 sysroot on the host system" "/xwin/msvc17")
-option(DOWNLOAD_WINDOWS_X86_X64_SYSROOT "Download the Windows x86_64 sysroot using xwin if the given sysroot path at WINDOWS_X86_X64_SYSROOT is not found on the host system" OFF)
-option(KEEP_XWIN_BIN "Whether to install the vendored xwin binary to CMAKE_STAGING_PREFIX if it's not found on the host system when the given Windows x86_64 sysroot path also isn't found" OFF)
+option(WINDOWS_X64_SYSROOT "Path to the Windows x64 sysroot on the host" "/xwin/msvc17")
+option(DOWNLOAD_WINDOWS_X64_SYSROOT "Download the Windows x64 sysroot using xwin if WINDOWS_X64_SYSROOT isn't found on the host (requires cargo)" OFF)
 
-if(KEEP_XWIN_BIN AND NOT CMAKE_STAGING_PREFIX)
-    message(FATAL_ERROR "CMAKE_STAGING_PREFIX should be set if KEEP_XWIN_BIN is ON")
+if(NOT CMAKE_STAGING_PREFIX OR NOT WINDOWS_X64_SYSROOT)
+    message(FATAL_ERROR "CMAKE_STAGING_PREFIX and WINDOWS_X64_SYSROOT are required")
 endif()
 
-set(WINDOWS_X86_X64_FIND_ROOT_PATH "${CMAKE_INSTALL_PREFIX}")
+set(WINDOWS_X64_FIND_ROOT_PATH "${CMAKE_INSTALL_PREFIX}")
 
 # assume that the path has the CRT and Windows SDK if it exists
-if(NOT EXISTS WINDOWS_X86_X64_SYSROOT AND DOWNLOAD_WINDOWS_X86_X64_SYSROOT)
-    find_program(XWIN_BIN
-        xwin
-        OPTIONAL
-    )
-
-    if(DEFINED XWIN_BIN)
+if(NOT EXISTS WINDOWS_X64_SYSROOT AND DOWNLOAD_WINDOWS_X64_SYSROOT)
+    find_program(XWIN_BIN xwin OPTIONAL)
+    if(XWIN_BIN)
         xwin_splat("${XWIN_BIN}")
     else()
         # xwin doesn't distribute a binary linked with glibc so it must be built from source which means cargo is needed lol
-        find_program(CARGO_BIN
-            cargo
-            REQUIRED
-        )
-
-        if(KEEP_XWIN_BIN)
-            set(CARGO_COMMAND install xwin --root "${CMAKE_STAGING_PREFIX}" --path vendor/xwin)
-            set(XWIN_BIN "${CMAKE_STAGING_PREFIX}/bin/xwin")
-        else()
-            set(CARGO_COMMAND build --manifest-path vendor/xwin --release)
-            set(XWIN_BIN "${CMAKE_CURRENT_BINARY_DIR}/vendor/xwin")
-        endif()
+        find_program(CARGO_BIN cargo REQUIRED)
+        set(XWIN_INSTALL_PATH "${CMAKE_STAGING_PREFIX}/vendor/xwin")
 
         execute_process(COMMAND
-            "${CARGO_BIN}" ${CARGO_COMMAND} --bin xwin --features native-tls --target x86_64-unknown-linux-gnu --target-dir "${CMAKE_CURRENT_BINARY_DIR}/vendor/xwin" --frozen
+            "${CARGO_BIN}" build --manifest-path vendor/xwin --release --bin xwin --features native-tls --target x86_64-unknown-linux-gnu --target-dir "${XWIN_INSTALL_PATH}" --frozen
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
             COMMAND_ERROR_IS_FATAL ANY
         )
 
-        xwin_splat("${XWIN_BIN}")
+        xwin_splat("${XWIN_INSTALL_PATH}")
     endif()
-elseif(NOT EXISTS WINDOWS_X86_X64_SYSROOT)
-    message(FATAL_ERROR "the given path to the Windows x86_64 sysroot (${WINDOWS_X86_X64_SYSROOT}) doesn't exist on the host system and DOWNLOAD_WINDOWS_X86_X64_SYSROOT is OFF")
+elseif(NOT EXISTS WINDOWS_X64_SYSROOT)
+    message(FATAL_ERROR "the Windows x64 sysroot (${WINDOWS_X64_SYSROOT}) doesn't exist on the host and DOWNLOAD_WINDOWS_X64_SYSROOT is OFF")
 endif()
 
 set(CMAKE_SYSTEM_NAME Windows)
 set(CMAKE_SYSTEM_PROCESSOR AMD64)
 set(triple x86_64-pc-windows-msvc)
 
-set(CMAKE_SYSROOT "${WINDOWS_X86_X64_SYSROOT}")
-set(CMAKE_FIND_ROOT_PATH "${WINDOWS_X86_X64_FIND_ROOT_PATH}")
+set(CMAKE_SYSROOT "${WINDOWS_X64_SYSROOT}")
+set(CMAKE_FIND_ROOT_PATH "${WINDOWS_X64_FIND_ROOT_PATH}")
 
 set(CMAKE_C_COMPILER clang)
 set(CMAKE_C_COMPILER_TARGET ${triple})

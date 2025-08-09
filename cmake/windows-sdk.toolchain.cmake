@@ -12,7 +12,7 @@ cmake_host_system_information(RESULT WINDOWS_SDK_INSTALL_PATH
     ERROR_VARIABLE REGISTRY_QUERY_RESULT
 )
 if(NOT WINDOWS_SDK_INSTALL_PATH OR REGISTRY_QUERY_RESULT)
-    message(FATAL_ERROR "failed to query the Windows registry for installed Windows SDK root path: ${REGISTRY_QUERY_RESULT}")
+    message(FATAL_ERROR "failed to query the Windows registry for the installed Windows SDK root path: ${REGISTRY_QUERY_RESULT}")
 endif()
 
 cmake_host_system_information(RESULT WINDOWS_SDK_ROOTS

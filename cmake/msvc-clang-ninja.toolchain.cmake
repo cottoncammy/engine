@@ -20,7 +20,7 @@ if(NOT EXISTS "${VSWHERE_INSTALL_PATH}")
     list(GET VSWHERE_DOWNLOAD_STATUS 0 RETURN_CODE)
     if(NOT RETURN_CODE EQUAL 0)
         list(GET VSWHERE_DOWNLOAD_STATUS 1 RETURN_MESSAGE)
-        message(FATAL_ERROR "vswhere wasn't found on the system and couldn't be downloaded: ${RETURN_MESSAGE}")
+        message(FATAL_ERROR "vswhere binary couldn't be found and couldn't be downloaded: ${RETURN_MESSAGE}")
     endif()
 endif()
 
@@ -38,14 +38,13 @@ set(VSWHERE_REQUIRES
 execute_process(COMMAND
     "${VSWHERE_INSTALL_PATH}/vswhere" -products Microsoft.VisualStudio.Product.BuildTools
         -latest -version 17 -requires ${VSWHERE_REQUIRES} -property installationPath
-    WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
     OUTPUT_VARIABLE VS17_INSTALL_PATH
     OUTPUT_STRIP_TRAILING_WHITESPACE
     COMMAND_ERROR_IS_FATAL ANY
 )
 
 if(NOT VS17_INSTALL_PATH)
-    message(FATAL_ERROR "vswhere couldn't find an installation of Visual Studio 17 Build Tools with the workloads and components required to build this project")
+    message(FATAL_ERROR "vswhere binary couldn't find an installation of Visual Studio 2022 Build Tools that meets the requirements to build this project")
 endif()
 cmake_path(NORMAL_PATH VS17_INSTALL_PATH)
 

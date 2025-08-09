@@ -29,6 +29,9 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
 endif()
 
+# add engine binary
+add_executable(engine)
+
 # find dependencies or build them
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(WANTED_SDL3_VERSION 3.2)
@@ -46,17 +49,15 @@ endif()
 
 find_package(SDL3_shadercross ${WANTED_SDL3_SHADERCROSS_VERSION} QUIET NO_CMAKE_FIND_ROOT_PATH)
 if(NOT SDL3_shadercross_FOUND)
-    # can't build from source for the host machine to run when cross-compiling
+    # can't build from source for the host to run when cross-compiling
     if(CMAKE_CROSSCOMPILING)
-        message(FATAL_ERROR "SDL3_shadercross was not found and cannot be built for the host system during cross-compilation")
+        message(FATAL_ERROR "SDL3_shadercross wasn't found and can't be built for the host during cross-compilation")
     endif()
 
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/build-SDL3-shadercross.cmake")
 endif()
 
 # configure engine binary
-add_executable(engine)
-
 target_compile_features(engine PRIVATE c_std_11)
 set_target_properties(engine PROPERTIES
     C_STANDARD 11
@@ -98,11 +99,17 @@ foreach(SHADERCROSS_INPUT_FILE IN LISTS SHADERCROSS_INPUT_FILES)
         set(SHADERCROSS_OUTPUT_FILE "${CMAKE_CURRENT_BINARY_DIR}/shaders/${SHADERCROSS_OUTPUT_FILENAME}.$<IF:$<STREQUAL:${SHADER_FORMAT},DXIL>,dxil,spv>")
         list(APPEND SHADERCROSS_OUTPUT_FILES "${SHADERCROSS_OUTPUT_FILE}")
 
+        cmake_path(RELATIVE_PATH SHADERCROSS_INPUT_FILE OUTPUT_VARIABLE SHADERCROSS_INPUT_FILE_TRUNC)
+        cmake_path(RELATIVE_PATH
+            SHADERCROSS_OUTPUT_FILE
+            BASE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+            OUTPUT_VARIABLE SHADERCROSS_OUTPUT_FILE_TRUNC
+        )
         add_custom_command(COMMAND
             shadercross "${SHADERCROSS_INPUT_FILE}" -o "${SHADERCROSS_OUTPUT_FILE}"
             OUTPUT "${SHADERCROSS_OUTPUT_FILE}"
             DEPENDS "${SHADERCROSS_INPUT_FILE}"
-            COMMENT "Compiling ${SHADERCROSS_INPUT_FILE} to ${SHADERCROSS_OUTPUT_FILE}"
+            COMMENT "Compiling ${SHADERCROSS_INPUT_FILE_TRUNC} to ${SHADERCROSS_OUTPUT_FILE_TRUNC}"
             VERBATIM
         )
     endforeach()
@@ -144,10 +151,3 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/engine-config.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/engine-config-version.cmake"
     DESTINATION "${CONFIG_INSTALL_DIR}"
 )
-
-# export engine targets
-export(EXPORT engine-targets
-    NAMESPACE cottoncammy::
-    FILE "${CMAKE_CURRENT_BINARY_DIR}/engine-targets.cmake"
-)
-export(PACKAGE engine)

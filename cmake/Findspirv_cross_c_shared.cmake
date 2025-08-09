@@ -1,6 +1,6 @@
 if(Vulkan_FOUND)
     if(NOT Vulkan_INCLUDE_DIR OR NOT VULKAN_BIN_PATH OR NOT VULKAN_LIB_PATH)
-        message(FATAL_ERROR "the Vulkan SDK paths weren't found in the CMake cache")
+        message(FATAL_ERROR "the Vulkan SDK paths aren't in the CMake cache")
     endif()
 
     include("${CMAKE_CURRENT_LIST_DIR}/check-paths.cmake")

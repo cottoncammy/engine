@@ -8,7 +8,7 @@ set(SDL3_shadercross_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/SDL_shadercr
 # the Windows SDK includes dxcompiler and dxil
 if(NOT WINDOWS_SDK_INCLUDE_PATH OR NOT WINDOWS_SDK_BIN_PATH OR NOT WINDOWS_SDK_LIB_PATH)
     if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
-        message(FATAL_ERROR "the Windows SDK paths weren't found in the CMake cache")
+        message(FATAL_ERROR "the Windows SDK paths aren't in the CMake cache")
     else()
         enable_sdl_shadercross_vendored_dependencies()
     endif()
