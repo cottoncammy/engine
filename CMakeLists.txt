@@ -11,10 +11,6 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang" OR NOT CMAKE_C_COMPILER_FRONTEND_VAR
     message(FATAL_ERROR "only the clang-cl C compiler is supported")
 endif()
 
-if(DEFINED CMAKE_CXX_COMPILER_ID AND (NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR NOT CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC"))
-    message(FATAL_ERROR "only the clang-cl C++ compiler is supported")
-endif()
-
 if(NOT CMAKE_GENERATOR STREQUAL "Ninja")
     message(FATAL_ERROR "only the Ninja build generator is supported")
 endif()
