@@ -1,11 +1,11 @@
 @echo off
 if not "%2"=="" (
-    echo unknown arg
+    echo unknown arg %2
     goto error
 )
 if not "%1"=="" (
     if not "%1"=="--fresh" (
-        echo unknown arg
+        echo unknown arg %1
         goto error
     )
 )
