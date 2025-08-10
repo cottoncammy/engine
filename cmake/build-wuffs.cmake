@@ -19,20 +19,18 @@ set(WUFFS_BASE_DIRS
     "$<BUILD_INTERFACE:${WUFFS_INSTALL_PATH}>"
     $<INSTALL_INTERFACE:include/wuffs>
 )
+set(WUFFS_BASE_SOURCE_FILES
+    "$<BUILD_INTERFACE:${WUFFS_INSTALL_PATH}/wuffs-base.c>"
+    $<INSTALL_INTERFACE:include/wuffs/wuffs-base.c>
+)
 
 target_sources(wuffs_base
     INTERFACE
         FILE_SET wuffs_base_header
         TYPE HEADERS
         BASE_DIRS ${WUFFS_BASE_DIRS}
-            "$<BUILD_INTERFACE:${WUFFS_INSTALL_PATH}>"
-            $<INSTALL_INTERFACE:include/wuffs>
-        FILES
-            "$<BUILD_INTERFACE:${WUFFS_INSTALL_PATH}/wuffs-base.c>"
-            $<INSTALL_INTERFACE:include/wuffs/wuffs-base.c>
-    INTERFACE
-        "$<BUILD_INTERFACE:${WUFFS_INSTALL_PATH}/wuffs-base.c>"
-        $<INSTALL_INTERFACE:include/wuffs/wuffs-base.c>
+        FILES ${WUFFS_BASE_SOURCE_FILES}
+    INTERFACE ${WUFFS_BASE_SOURCE_FILES}
 )
 
 find_program(GO_BIN go REQUIRED)
@@ -40,7 +38,7 @@ add_custom_command(COMMAND
     "${GO_BIN}" build -o "${WUFFS_BIN_PATH}" ./cmd/wuffs-c
     OUTPUT "${WUFFS_BIN_PATH}/wuffs-c.exe"
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/vendor/wuffs"
-    COMMENT "TODO"
+    COMMENT "Building C executable wuffs-c${CMAKE_EXECUTABLE_SUFFIX} with Go"
     VERBATIM
 )
 
@@ -53,30 +51,23 @@ add_custom_command(COMMAND
     DEPENDS ${WUFFS_FOO_SRC_FILES} "${WUFFS_INSTALL_PATH}/wuffs-base.c" "${WUFFS_BIN_PATH}/wuffs-c.exe"
     OUTPUT "${WUFFS_INSTALL_PATH}/wuffs-foo.c"
     WORKING_DIRECTORY "${WUFFS_BIN_PATH}"
-    COMMENT "TODO"
+    COMMENT "Generating wuffs-foo.c from src\\foo.wuffs"
     VERBATIM
     COMMAND_EXPAND_LISTS
 )
 
 add_library(wuffs_foo INTERFACE)
-get_property(foo TARGET wuffs_base PROPERTY FOO)
-set_property(TARGET wuffs_foo PROPERTY FOO "")
-
 target_sources(wuffs_foo
     INTERFACE
         FILE_SET wuffs_foo_headers
         TYPE HEADERS
-        BASE_DIRS
-            "$<BUILD_INTERFACE:${WUFFS_INSTALL_PATH}>"
-            $<INSTALL_INTERFACE:include/wuffs>
+        BASE_DIRS ${WUFFS_BASE_DIRS}
         FILES
-            "$<BUILD_INTERFACE:${WUFFS_INSTALL_PATH}/wuffs-base.c>"
-            $<INSTALL_INTERFACE:include/wuffs/wuffs-base.c>
+            ${WUFFS_BASE_SOURCE_FILES}
             "$<BUILD_INTERFACE:${WUFFS_INSTALL_PATH}/wuffs-foo.c>"
             $<INSTALL_INTERFACE:include/wuffs/wuffs-foo.c>
     INTERFACE
-        "$<BUILD_INTERFACE:${WUFFS_INSTALL_PATH}/wuffs-base.c>"
-        $<INSTALL_INTERFACE:include/wuffs/wuffs-base.c>
+        ${WUFFS_BASE_SOURCE_FILES}
         "$<BUILD_INTERFACE:${WUFFS_INSTALL_PATH}/wuffs-foo.c>"
         $<INSTALL_INTERFACE:include/wuffs/wuffs-foo.c>
 )
