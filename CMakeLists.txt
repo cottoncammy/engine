@@ -135,10 +135,19 @@ install(EXPORT engine-targets
     NAMESPACE cottoncammy::
     FILE engine-targets.cmake
 )
+
+# install wuffs
+set(WUFFS_INSTALL_PATH "${CMAKE_CURRENT_BINARY_DIR}/vendor/wuffs")
+install(FILES
+    "${WUFFS_INSTALL_PATH}/wuffs-base.c"
+    "${WUFFS_INSTALL_PATH}/wuffs-foo.c"
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/wuffs"
+)
+
 # install shaders
 install(FILES ${SHADERCROSS_OUTPUT_FILES} DESTINATION "${CMAKE_INSTALL_DATADIR}/shaders")
 
-# install CMake config files
+# install CMake config
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
     engine-config-version.cmake
