@@ -57,6 +57,8 @@ if(NOT SDL3_shadercross_FOUND)
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/build-SDL3-shadercross.cmake")
 endif()
 
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/build-wuffs.cmake")
+
 # configure engine binary
 target_compile_features(engine PRIVATE c_std_11)
 set_target_properties(engine PROPERTIES
@@ -79,8 +81,11 @@ target_sources(engine
 )
 target_link_libraries(engine PRIVATE
     SDL3::SDL3
+    wuffs_foo
+    wuffs_base
 )
 
+# TODO
 # compile shaders
 set(SHADERCROSS_INPUT_FILES
     assets/shaders/foo.vert.hlsl

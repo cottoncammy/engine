@@ -36,8 +36,9 @@ set(VSWHERE_REQUIRES
 )
 
 execute_process(COMMAND
-    "${VSWHERE_INSTALL_PATH}/vswhere" -products Microsoft.VisualStudio.Product.BuildTools
+    vswhere -products Microsoft.VisualStudio.Product.BuildTools
         -latest -version 17 -requires ${VSWHERE_REQUIRES} -property installationPath
+    WORKING_DIRECTORY "${VSWHERE_INSTALL_PATH}"
     OUTPUT_VARIABLE VS17_INSTALL_PATH
     OUTPUT_STRIP_TRAILING_WHITESPACE
     COMMAND_ERROR_IS_FATAL ANY
