@@ -11,7 +11,7 @@ The following free and open source software are used directly:
 * [LLVM](https://github.com/llvm/llvm-project)
 * [Ninja](https://github.com/ninja-build/ninja)
 * [SDL3](https://github.com/libsdl-org/SDL)
-* [SDL_shadercross](https://github.com/libsdl-org/SDL_shadercross)
+* [SDL3_shadercross](https://github.com/libsdl-org/SDL_shadercross)
 * [vswhere](https://github.com/microsoft/vswhere)
 * [wuffs](https://github.com/google/wuffs)
 * [xwin](https://github.com/Jake-Shadle/xwin)

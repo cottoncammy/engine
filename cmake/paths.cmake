@@ -24,3 +24,12 @@ macro(set_and_append_paths OUT_VAR)
     _check_paths(${ARGN})
     list(APPEND ${OUT_VAR} ${ARGN})
 endmacro()
+
+function(get_path_name PATH_VAR BASE_DIR OUT_VAR)
+    cmake_path(RELATIVE_PATH
+        PATH_VAR
+        BASE_DIRECTORY "${BASE_DIR}"
+        OUTPUT_VARIABLE OUT_VAR
+    )
+    cmake_path(NATIVE_PATH PATH_VAR PATH_VAR)
+endfunction()

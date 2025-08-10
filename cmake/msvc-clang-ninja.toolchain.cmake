@@ -49,7 +49,7 @@ if(NOT VS17_INSTALL_PATH)
 endif()
 cmake_path(NORMAL_PATH VS17_INSTALL_PATH)
 
-include("${CMAKE_CURRENT_LIST_DIR}/check-paths.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/paths.cmake")
 set_and_append_paths(CMAKE_PROGRAM_PATH "${VS17_INSTALL_PATH}/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja")
 
 set_and_check_path(VS17_MSVC_VERSION_FILE_PATH "${VS17_INSTALL_PATH}/VC/Auxiliary/Build/Microsoft.VCToolsVersion.default.txt")

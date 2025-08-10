@@ -3,7 +3,7 @@ if(Vulkan_FOUND)
         message(FATAL_ERROR "the Vulkan SDK paths aren't in the CMake cache")
     endif()
 
-    include("${CMAKE_CURRENT_LIST_DIR}/check-paths.cmake")
+    include("${CMAKE_CURRENT_LIST_DIR}/paths.cmake")
     check_path("${Vulkan_INCLUDE_DIR}")
 
     add_library(spirv-cross-c-shared SHARED IMPORTED)
