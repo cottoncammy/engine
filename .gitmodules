@@ -8,7 +8,6 @@
 [submodule "wuffs"]
 	path = vendor/wuffs
 	url = https://github.com/google/wuffs.git
-	branch = v0.3
 [submodule "xwin"]
 	path = vendor/xwin
 	url = https://github.com/Jake-Shadle/xwin.git

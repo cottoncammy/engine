@@ -8,7 +8,7 @@ else()
 endif()
 
 configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/vendor/wuffs/release/c/wuffs-v0.3.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/vendor/wuffs/release/c/wuffs-unsupported-snapshot.c"
     "${WUFFS_INSTALL_PATH}/wuffs-base.c"
     NO_SOURCE_PERMISSIONS
     COPYONLY
