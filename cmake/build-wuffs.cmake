@@ -42,32 +42,34 @@ add_custom_command(COMMAND
     VERBATIM
 )
 
-set(WUFFS_FOO_SRC_FILES
+set(WUFFS_SM_IN_SOURCE_FILES
     src/foo.wuffs
 )
-list(TRANSFORM WUFFS_FOO_SRC_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
+list(TRANSFORM WUFFS_SM_IN_SOURCE_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
 add_custom_command(COMMAND
-    wuffs-c gen -package_name foo ${WUFFS_FOO_SRC_FILES} > "${WUFFS_INSTALL_PATH}/wuffs-foo.c"
-    DEPENDS ${WUFFS_FOO_SRC_FILES} "${WUFFS_INSTALL_PATH}/wuffs-base.c" "${WUFFS_BIN_PATH}/wuffs-c.exe"
-    OUTPUT "${WUFFS_INSTALL_PATH}/wuffs-foo.c"
+    wuffs-c gen -package_name submachine ${WUFFS_SM_IN_SOURCE_FILES} > "${WUFFS_INSTALL_PATH}/wuffs-submachine.c"
+    DEPENDS ${WUFFS_SM_IN_SOURCE_FILES} "${WUFFS_INSTALL_PATH}/wuffs-base.c" "${WUFFS_BIN_PATH}/wuffs-c.exe"
+    OUTPUT "${WUFFS_INSTALL_PATH}/wuffs-submachine.c"
     WORKING_DIRECTORY "${WUFFS_BIN_PATH}"
-    COMMENT "Generating wuffs-foo.c from src\\foo.wuffs"
+    COMMENT "Generating wuffs-submachine.c from src\\foo.wuffs"
     VERBATIM
     COMMAND_EXPAND_LISTS
 )
 
-add_library(wuffs_foo INTERFACE)
-target_sources(wuffs_foo
+add_library(wuffs_submachine INTERFACE)
+set(WUFFS_SM_OUT_SOURCE_FILES
+    "$<BUILD_INTERFACE:${WUFFS_INSTALL_PATH}/wuffs-submachine.c>"
+    $<INSTALL_INTERFACE:include/wuffs/wuffs-submachine.c>
+)
+target_sources(wuffs_submachine
     INTERFACE
-        FILE_SET wuffs_foo_headers
+        FILE_SET wuffs_submachine_headers
         TYPE HEADERS
         BASE_DIRS ${WUFFS_BASE_DIRS}
         FILES
             ${WUFFS_BASE_SOURCE_FILES}
-            "$<BUILD_INTERFACE:${WUFFS_INSTALL_PATH}/wuffs-foo.c>"
-            $<INSTALL_INTERFACE:include/wuffs/wuffs-foo.c>
+            ${WUFFS_SM_OUT_SOURCE_FILES}
     INTERFACE
         ${WUFFS_BASE_SOURCE_FILES}
-        "$<BUILD_INTERFACE:${WUFFS_INSTALL_PATH}/wuffs-foo.c>"
-        $<INSTALL_INTERFACE:include/wuffs/wuffs-foo.c>
+        ${WUFFS_SM_OUT_SOURCE_FILES}
 )

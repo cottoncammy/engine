@@ -7,7 +7,7 @@
     "Plain Text": [
       ".git*",
       "*.cmake",
-      "*.cmake.in",
+      "*.in",
       "*.bat"
     ],
     "YAML": [

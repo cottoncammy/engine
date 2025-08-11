@@ -32,7 +32,7 @@ SpaceAfterLogicalNot: false
 SpaceAroundPointerQualifiers: After
 SpaceBeforeAssignmentOperators: true
 SpaceBeforeCaseColon: false
-SpaceBeforeParens: ControlStatements
+SpaceBeforeParens: Never
 SpaceBeforeSquareBrackets: false
 SpaceInEmptyBlock: false
 SpacesBeforeTrailingComments: 2

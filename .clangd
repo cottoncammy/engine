@@ -6,7 +6,9 @@ Diagnostics:
       - "bugprone-*"
       - "clang-analyzer-*"
       - "misc-*"
+    Remove:
+      - "misc-unused-parameters"
   UnusedIncludes: Strict
-  MissingIncludes: Strict
+  MissingIncludes: None
 InlayHints:
   BlockEnd: true

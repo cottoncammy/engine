@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.50 FATAL_ERROR)
 
-project(engine VERSION 0.0.0 LANGUAGES C)
+project(submachine VERSION 0.1.0 LANGUAGES C)
 
 # check build config
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows" OR NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "AMD64")
@@ -29,13 +29,13 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-# add engine binary
-add_executable(engine)
+# add submachine binary
+add_executable(submachine)
 
 # find dependencies or build them
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-set(WANTED_SDL3_VERSION 3.2)
-set(WANTED_SDL3_SHADERCROSS_VERSION 3.0)
+set(WANTED_SDL3_VERSION 3.2.0)
+set(WANTED_SDL3_SHADERCROSS_VERSION 3.0.0)
 
 find_package(SDL3 ${WANTED_SDL3_VERSION} QUIET)
 if(NOT SDL3_FOUND)
@@ -53,15 +53,14 @@ if(NOT SDL3_shadercross_FOUND)
     if(CMAKE_CROSSCOMPILING)
         message(FATAL_ERROR "SDL3_shadercross wasn't found and can't be built for the host during cross-compilation")
     endif()
-
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/build-SDL3-shadercross.cmake")
 endif()
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/build-wuffs.cmake")
 
-# configure engine binary
-target_compile_features(engine PRIVATE c_std_11)
-set_target_properties(engine PROPERTIES
+# configure submachine binary
+target_compile_features(submachine PRIVATE c_std_11)
+set_target_properties(submachine PROPERTIES
     C_STANDARD 11
     C_STANDARD_REQUIRED ON
     C_EXTENSIONS ON
@@ -69,20 +68,26 @@ set_target_properties(engine PROPERTIES
     EXPORT_COMPILE_COMMANDS ON
 )
 
-target_sources(engine
-    PRIVATE
-        FILE_SET engine_headers
-        TYPE HEADERS
-        BASE_DIRS src
-        FILES
-            src/main.h
-    PRIVATE
-        src/main.c
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/submachine.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/submachine.h"
+    NO_SOURCE_PERMISSIONS
+    @ONLY
 )
-target_link_libraries(engine PRIVATE
+target_sources(submachine
+    PRIVATE
+        FILE_SET submachine_headers
+        TYPE HEADERS
+        BASE_DIRS "$<BUILD_LOCAL_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
+        FILES
+            "$<BUILD_LOCAL_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/submachine.h>"
+    PRIVATE
+        src/entrypoint.c
+)
+target_link_libraries(submachine PRIVATE
     SDL3::SDL3
-    wuffs_foo
     wuffs_base
+    wuffs_submachine
 )
 
 # compile shaders
@@ -119,28 +124,30 @@ foreach(SHADERCROSS_INPUT_FILE IN LISTS SHADERCROSS_INPUT_FILES)
 endforeach()
 
 add_custom_target(shaders DEPENDS ${SHADERCROSS_OUTPUT_FILES})
-add_dependencies(engine shaders)
+add_dependencies(submachine shaders)
 
-# install engine binary
+# install submachine binary
 include(GNUInstallDirs)
 set(CONFIG_INSTALL_DIR "cmake")
 
-install(TARGETS engine
-    EXPORT engine-targets
+install(TARGETS submachine
+    EXPORT submachine-targets
     ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
 )
-install(EXPORT engine-targets
+install(EXPORT submachine-targets
     DESTINATION "${CONFIG_INSTALL_DIR}"
     NAMESPACE cottoncammy::
-    FILE engine-targets.cmake
+    FILE submachine-targets.cmake
 )
+
+install(FILES )
 
 # install wuffs
 set(WUFFS_INSTALL_PATH "${CMAKE_CURRENT_BINARY_DIR}/vendor/wuffs")
 install(FILES
     "${WUFFS_INSTALL_PATH}/wuffs-base.c"
-    "${WUFFS_INSTALL_PATH}/wuffs-foo.c"
+    "${WUFFS_INSTALL_PATH}/wuffs-submachine.c"
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/wuffs"
 )
 
@@ -150,16 +157,16 @@ install(FILES ${SHADERCROSS_OUTPUT_FILES} DESTINATION "${CMAKE_INSTALL_DATADIR}/
 # install CMake config
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
-    engine-config-version.cmake
+    submachine-config-version.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY ExactVersion
 )
-configure_package_config_file("${CMAKE_CURRENT_LIST_DIR}/cmake/engine-config.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/engine-config.cmake"
+configure_package_config_file("${CMAKE_CURRENT_LIST_DIR}/cmake/submachine-config.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/submachine-config.cmake"
     INSTALL_DESTINATION "${CONFIG_INSTALL_DIR}"
     NO_SET_AND_CHECK_MACRO
 )
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/engine-config.cmake"
-    "${CMAKE_CURRENT_BINARY_DIR}/engine-config-version.cmake"
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/submachine-config.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/submachine-config-version.cmake"
     DESTINATION "${CONFIG_INSTALL_DIR}"
 )
