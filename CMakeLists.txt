@@ -69,8 +69,8 @@ set_target_properties(submachine PROPERTIES
 )
 
 configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/submachine.h.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/submachine.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/sm_config.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/sm_config.h"
     NO_SOURCE_PERMISSIONS
     @ONLY
 )
@@ -78,12 +78,16 @@ target_sources(submachine
     PRIVATE
         FILE_SET submachine_headers
         TYPE HEADERS
-        BASE_DIRS "$<BUILD_LOCAL_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
+        BASE_DIRS
+            "${CMAKE_CURRENT_BINARY_DIR}"
+            src
         FILES
-            "$<BUILD_LOCAL_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/submachine.h>"
+            "${CMAKE_CURRENT_BINARY_DIR}/sm_config.h"
+            src/sm_entrypoint.h
     PRIVATE
-        src/entrypoint.c
+        src/sm_entrypoint.c
 )
+
 target_link_libraries(submachine PRIVATE
     SDL3::SDL3
     wuffs_base

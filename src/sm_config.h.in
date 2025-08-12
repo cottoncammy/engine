@@ -1,0 +1,10 @@
+#ifndef SM_CONFIG_H_
+# define SM_CONFIG_H_
+# if !defined _MSC_VER
+#  error Unsupported compiler
+# endif
+
+# define SUBMACHINE_NAME "Submachine Engine"
+# define SUBMACHINE_VERSION_STRING "@CMAKE_PROJECT_VERSION@"
+
+#endif

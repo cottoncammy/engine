@@ -1,4 +1,4 @@
-if(Vulkan_FOUND)
+if(NOT spirv-cross-c-shared_FOUND AND Vulkan_FOUND)
     if(NOT Vulkan_INCLUDE_DIR OR NOT VULKAN_BIN_PATH OR NOT VULKAN_LIB_PATH)
         message(FATAL_ERROR "the Vulkan SDK paths aren't in the CMake cache")
     endif()

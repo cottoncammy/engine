@@ -3,7 +3,7 @@ macro(enable_sdl_shadercross_vendored_dependencies)
     set(SDLSHADERCROSS_VENDORED_DEPENDENCIES ON)
 endmacro()
 
-set(SDL3_shadercross_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/SDL_shadercross")
+set(SDL3_shadercross_SOURCE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/vendor/SDL_shadercross")
 
 # the Windows SDK includes dxcompiler and dxil
 if(NOT WINDOWS_SDK_INCLUDE_PATH OR NOT WINDOWS_SDK_BIN_PATH OR NOT WINDOWS_SDK_LIB_PATH)
@@ -14,7 +14,7 @@ if(NOT WINDOWS_SDK_INCLUDE_PATH OR NOT WINDOWS_SDK_BIN_PATH OR NOT WINDOWS_SDK_L
     endif()
 elseif(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
     # copy the binaries to where SDL_shadercross expects them
-    set(DirectXShaderCompiler_INSTALL_PATH "${SDL3_shadercross_SOURCE_DIR}/external/DirectXShaderCompiler-binaries")
+    set(DirectXShaderCompiler_INSTALL_PATH "${SDL3_shadercross_SOURCE_PATH}/external/DirectXShaderCompiler-binaries")
     file(INSTALL
         "${WINDOWS_SDK_INCLUDE_PATH}/um/dxcapi.h"
         "${WINDOWS_SDK_BIN_PATH}/x64/dxcompiler.dll"
@@ -46,4 +46,4 @@ if(SDL3_SDL3-static_FOUND OR TARGET SDL3::SDL3-static)
     set(SDLSHADERCROSS_CLI_STATIC ON)
 endif()
 set(SDLSHADERCROSS_INSTALL ON)
-add_subdirectory("${SDL3_shadercross_SOURCE_DIR}")
+add_subdirectory("${SDL3_shadercross_SOURCE_PATH}")
