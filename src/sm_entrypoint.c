@@ -45,13 +45,15 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     sm_state *state = malloc(sizeof(sm_state));
     if(state == NULL) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to allocate heap memory for engine state");
-        goto err3;
+        goto err4;
     }
     state->device = device;
     state->window = window;
     appstate = (void **)&state;
 
     return SDL_APP_CONTINUE;
+err4:
+    SDL_ReleaseWindowFromGPUDevice(device, window);
 err3:
     SDL_DestroyWindow(window);
 err2:

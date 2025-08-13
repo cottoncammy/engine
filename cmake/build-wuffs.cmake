@@ -1,4 +1,4 @@
-set(WUFFS_INSTALL_PATH "${CMAKE_CURRENT_BINARY_DIR}/vendor/wuffs")
+set(WUFFS_INSTALL_PATH "${CMAKE_CURRENT_BINARY_DIR}/vendor/wuffs" CACHE PATH "")
 
 if(CMAKE_CROSSCOMPILING)
     include(GNUInstallDirs)

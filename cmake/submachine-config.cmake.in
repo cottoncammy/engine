@@ -1,5 +1,8 @@
 include(CMakeFindDependencyMacro)
 find_dependency(SDL3 @WANTED_SDL3_VERSION@ REQUIRED)
 
+@PACKAGE_INIT@
+set(SUBMACHINE_ASSETS_PATH "@ASSETS_INSTALL_PATH@")
+
 include("${CMAKE_CURRENT_LIST_DIR}/submachine-targets.cmake")
 check_required_components(submachine)

@@ -30,7 +30,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # options
-option(SUBMACHINE_INSTALL "Whether to install the submachine binary and data" OFF)
+option(SUBMACHINE_INSTALL "Whether to install the submachine binary and data" ON)
 
 # add submachine binary
 add_executable(submachine)
@@ -61,6 +61,9 @@ endif()
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/build-wuffs.cmake")
 
+# this must be set to be known to sm_build_config.h during local builds
+set(SUBMACHINE_ASSETS_PATH "${CMAKE_CURRENT_BINARY_DIR}/assets")
+
 # configure submachine binary
 target_compile_features(submachine PRIVATE c_std_11)
 set_target_properties(submachine PROPERTIES
@@ -71,14 +74,13 @@ set_target_properties(submachine PROPERTIES
     EXPORT_COMPILE_COMMANDS ON
 )
 
-target_compile_definitions(submachine PRIVATE SM_LOCAL_BUILD)
-
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/sm_build_config.h.in"
     "${CMAKE_CURRENT_BINARY_DIR}/sm_build_config.h"
     NO_SOURCE_PERMISSIONS
     @ONLY
 )
+
 target_sources(submachine
     PRIVATE
         FILE_SET submachine_headers
@@ -104,12 +106,13 @@ set(SHADERCROSS_INPUT_FILES
     assets/shaders/foo.vert.hlsl
 )
 list(TRANSFORM SHADERCROSS_INPUT_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
+set(SHADERS_INSTALL_PATH "${SUBMACHINE_ASSETS_PATH}")
 set(SHADERCROSS_OUTPUT_FILES)
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/paths.cmake")
 foreach(SHADERCROSS_INPUT_FILE IN LISTS SHADERCROSS_INPUT_FILES)
     cmake_path(GET SHADERCROSS_INPUT_FILE FILENAME SHADERCROSS_INPUT_FILENAME)
-    get_path_name(SHADERCROSS_INPUT_FILE "${CMAKE_CURRENT_SOURCE_DIR}" SHADER_SOURCE_NAME)
+    get_relative_path(SHADERCROSS_INPUT_FILE "${CMAKE_CURRENT_SOURCE_DIR}" SHADERCROSS_INPUT_FILE_RELATIVE_PATH)
     cmake_path(REMOVE_EXTENSION
         SHADERCROSS_INPUT_FILENAME
         LAST_ONLY
@@ -117,7 +120,7 @@ foreach(SHADERCROSS_INPUT_FILE IN LISTS SHADERCROSS_INPUT_FILES)
     )
 
     foreach(SHADER_FORMAT JSON DXIL SPIRV)
-        set(SHADERCROSS_OUTPUT_FILE "${CMAKE_CURRENT_BINARY_DIR}/shaders/${SHADERCROSS_OUTPUT_FILENAME}")
+        set(SHADERCROSS_OUTPUT_FILE "${SHADERS_INSTALL_PATH}/${SHADERCROSS_OUTPUT_FILENAME}")
         if(SHADER_FORMAT STREQUAL JSON)
             string(APPEND SHADERCROSS_OUTPUT_FILE ".json")
         else()
@@ -125,12 +128,12 @@ foreach(SHADERCROSS_INPUT_FILE IN LISTS SHADERCROSS_INPUT_FILES)
         endif()
         list(APPEND SHADERCROSS_OUTPUT_FILES "${SHADERCROSS_OUTPUT_FILE}")
 
-        get_path_name(SHADERCROSS_OUTPUT_FILE "${CMAKE_CURRENT_BINARY_DIR}" SHADER_BINARY_NAME)
+        get_relative_path(SHADERCROSS_OUTPUT_FILE "${CMAKE_CURRENT_BINARY_DIR}" SHADERCROSS_OUTPUT_FILE_RELATIVE_PATH)
         add_custom_command(COMMAND
             shadercross "${SHADERCROSS_INPUT_FILE}" -o "${SHADERCROSS_OUTPUT_FILE}"
             OUTPUT "${SHADERCROSS_OUTPUT_FILE}"
             DEPENDS "${SHADERCROSS_INPUT_FILE}"
-            COMMENT "Compiling shader ${SHADER_SOURCE_NAME} to ${SHADER_BINARY_NAME}"
+            COMMENT "Compiling shader ${SHADERCROSS_INPUT_FILE_RELATIVE_PATH} to ${SHADERCROSS_OUTPUT_FILE_RELATIVE_PATH}"
             VERBATIM
         )
     endforeach()
@@ -141,15 +144,9 @@ add_dependencies(submachine shaders)
 
 # submachine installation
 if(SUBMACHINE_INSTALL)
-    get_property(SUBMACHINE_DEFINITIONS TARGET submachine PROPERTY COMPILE_DEFINITIONS)
-    list(REMOVE_ITEM SUBMACHINE_DEFINITIONS SM_LOCAL_BUILD)
-    set_property(TARGET submachine PROPERTY COMPILE_DEFINITIONS SUBMACHINE_DEFINITIONS)
-    target_compile_definitions(submachine PRIVATE SM_LOCAL_INSTALL)
-
     include(GNUInstallDirs)
-    set(CONFIG_INSTALL_DIR "cmake")
-    set(ASSETS_INSTALL_DIR "${CMAKE_INSTALL_DATADIR}/assets/submachine")
-    set(ASSETS_INSTALL_FULL_DIR "${CMAKE_INSTALL_FULL_DATADIR}/assets/submachine")
+    set(CMAKE_CONFIG_INSTALL_PATH "cmake")
+    set(ASSETS_INSTALL_PATH "${CMAKE_INSTALL_DATADIR}/assets/submachine")
 
     install(TARGETS submachine
         EXPORT submachine-targets
@@ -157,13 +154,15 @@ if(SUBMACHINE_INSTALL)
         RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
     )
     install(EXPORT submachine-targets
-        DESTINATION "${CONFIG_INSTALL_DIR}"
+        DESTINATION "${CMAKE_CONFIG_INSTALL_PATH}"
         NAMESPACE cottoncammy::
         FILE submachine-targets.cmake
     )
 
     # install wuffs
-    set(WUFFS_INSTALL_PATH "${CMAKE_CURRENT_BINARY_DIR}/vendor/wuffs")
+    if(NOT WUFFS_INSTALL_PATH)
+        message(FATAL_ERROR "the wuffs install path isn't in the CMake cache")
+    endif()
     install(FILES
         "${WUFFS_INSTALL_PATH}/wuffs-base.c"
         "${WUFFS_INSTALL_PATH}/wuffs-submachine.c"
@@ -171,7 +170,7 @@ if(SUBMACHINE_INSTALL)
     )
 
     # install shaders
-    install(FILES ${SHADERCROSS_OUTPUT_FILES} DESTINATION "${ASSETS_INSTALL_DIR}")
+    install(FILES ${SHADERCROSS_OUTPUT_FILES} DESTINATION "${ASSETS_INSTALL_PATH}")
 
     # install CMake config
     include(CMakePackageConfigHelpers)
@@ -182,11 +181,12 @@ if(SUBMACHINE_INSTALL)
     )
     configure_package_config_file("${CMAKE_CURRENT_LIST_DIR}/cmake/submachine-config.cmake.in"
         "${CMAKE_CURRENT_BINARY_DIR}/submachine-config.cmake"
-        INSTALL_DESTINATION "${CONFIG_INSTALL_DIR}"
+        INSTALL_DESTINATION "${CMAKE_CONFIG_INSTALL_PATH}"
+        PATH_VARS ASSETS_INSTALL_PATH
         NO_SET_AND_CHECK_MACRO
     )
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/submachine-config.cmake"
         "${CMAKE_CURRENT_BINARY_DIR}/submachine-config-version.cmake"
-        DESTINATION "${CONFIG_INSTALL_DIR}"
+        DESTINATION "${CMAKE_CONFIG_INSTALL_PATH}"
     )
 endif()
