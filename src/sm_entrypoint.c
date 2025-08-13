@@ -1,9 +1,9 @@
 #include <SDL3/SDL.h>
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL_main.h>
-#include <sm_config.h>
+#include <sm_build_config.h>
 
-#include <assert.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -21,46 +21,41 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
         return SDL_APP_FAILURE;
     }
 
-    SDL_DisplayID display = SDL_GetPrimaryDisplay();
-    if(display == 0) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to get primary SDL display: %s", SDL_GetError());
-        goto err1;
-    }
-    SDL_WINDOWPOS_CENTERED_DISPLAY(display);
-
-    int32_t numDisplayModes = 0;
-    SDL_DisplayMode **displayModes = SDL_GetFullscreenDisplayModes(display, &numDisplayModes);
-    if(displayModes == NULL || numDisplayModes == 0) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to get SDL display modes: %s", SDL_GetError());
+    SDL_GPUShaderFormat deviceFlags = SDL_GPU_SHADERFORMAT_DXIL | SDL_GPU_SHADERFORMAT_SPIRV;
+    SDL_GPUDevice *device = SDL_CreateGPUDevice(deviceFlags, true, NULL);
+    if(device == NULL) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create SDL GPU device: %s", SDL_GetError());
         goto err1;
     }
 
-    size_t i = 0;
-    for(; i < numDisplayModes; ++i) {
-        SDL_DisplayMode *displayMode = displayModes[i];
-        assert(displayMode != NULL);
-    }
-    assert(displayModes[i] == NULL);
-    SDL_free((void *)displayModes);
+    SDL_WINDOWPOS_CENTERED;
 
-    SDL_WindowFlags flags = 0;
-    SDL_Window *window  = SDL_CreateWindow(SUBMACHINE_NAME, 500, 500, flags);
+    SDL_WindowFlags windowFlags = SDL_WINDOW_HIGH_PIXEL_DENSITY;
+    SDL_Window *window = SDL_CreateWindow(SUBMACHINE_NAME, 960, 600, windowFlags);
     if(window == NULL) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create SDL window: %s", SDL_GetError());
-        goto err1;
-    }
-
-    struct sm_state *state = malloc(sizeof(struct sm_state));
-    if(state == NULL) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to allocate heap memory for engine state");
         goto err2;
     }
+
+    if(!SDL_ClaimWindowForGPUDevice(device, window)) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create swapchain for SDL window: %s", SDL_GetError());
+        goto err3;
+    }
+
+    sm_state *state = malloc(sizeof(sm_state));
+    if(state == NULL) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to allocate heap memory for engine state");
+        goto err3;
+    }
+    state->device = device;
     state->window = window;
-    appstate = (void **) &state;
+    appstate = (void **)&state;
 
     return SDL_APP_CONTINUE;
-err2:
+err3:
     SDL_DestroyWindow(window);
+err2:
+    SDL_DestroyGPUDevice(device);
 err1:
     SDL_Quit();
     return SDL_APP_FAILURE;
@@ -78,7 +73,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 }
 
 void SDL_AppQuit(void *appstate, SDL_AppResult result) {
-    struct sm_state *state = (struct sm_state*) appstate;
+    sm_state *state = (sm_state*) appstate;
     free(state);
     SDL_Quit();
 }

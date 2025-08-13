@@ -69,8 +69,8 @@ set_target_properties(submachine PROPERTIES
 )
 
 configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/sm_config.h.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/sm_config.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/sm_build_config.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/sm_build_config.h"
     NO_SOURCE_PERMISSIONS
     @ONLY
 )
@@ -82,7 +82,7 @@ target_sources(submachine
             "${CMAKE_CURRENT_BINARY_DIR}"
             src
         FILES
-            "${CMAKE_CURRENT_BINARY_DIR}/sm_config.h"
+            "${CMAKE_CURRENT_BINARY_DIR}/sm_build_config.h"
             src/sm_entrypoint.h
     PRIVATE
         src/sm_entrypoint.c
@@ -111,9 +111,13 @@ foreach(SHADERCROSS_INPUT_FILE IN LISTS SHADERCROSS_INPUT_FILES)
         OUTPUT_VARIABLE SHADERCROSS_OUTPUT_FILENAME
     )
 
-    foreach(SHADER_FORMAT DXIL SPIRV)
+    foreach(SHADER_FORMAT JSON DXIL SPIRV)
         set(SHADERCROSS_OUTPUT_FILE "${CMAKE_CURRENT_BINARY_DIR}/shaders/${SHADERCROSS_OUTPUT_FILENAME}")
-        string(APPEND SHADERCROSS_OUTPUT_FILE ".$<IF:$<STREQUAL:${SHADER_FORMAT},DXIL>,dxil,spv>")
+        if(SHADER_FORMAT STREQUAL JSON)
+            string(APPEND SHADERCROSS_OUTPUT_FILE ".json")
+        else()
+            string(APPEND SHADERCROSS_OUTPUT_FILE ".$<IF:$<STREQUAL:${SHADER_FORMAT},DXIL>,dxil,spv>")
+        endif()
         list(APPEND SHADERCROSS_OUTPUT_FILES "${SHADERCROSS_OUTPUT_FILE}")
 
         get_path_name(SHADERCROSS_OUTPUT_FILE "${CMAKE_CURRENT_BINARY_DIR}" SHADER_BINARY_NAME)
@@ -144,8 +148,6 @@ install(EXPORT submachine-targets
     NAMESPACE cottoncammy::
     FILE submachine-targets.cmake
 )
-
-install(FILES )
 
 # install wuffs
 set(WUFFS_INSTALL_PATH "${CMAKE_CURRENT_BINARY_DIR}/vendor/wuffs")
