@@ -1,10 +1,18 @@
-#ifndef SM_CONFIG_H_
-# define SM_CONFIG_H_
+#ifndef SM_BUILD_CONFIG_H_
+# define SM_BUILD_CONFIG_H_
 # if !defined _MSC_VER
 #  error Unsupported compiler
 # endif
 
-# define SUBMACHINE_NAME "Submachine Engine"
-# define SUBMACHINE_VERSION_STRING "@CMAKE_PROJECT_VERSION@"
+# define SM_INFO_STRING "Submachine Engine"
+# define SM_VERSION_STRING "@CMAKE_PROJECT_VERSION@"
+
+# ifdef SM_LOCAL_BUILD
+#  cmakedefine SM_ASSETS_PATH "@CMAKE_BINARY_DIR@"
+# elif defined SM_LOCAL_INSTALL
+#  cmakedefine SM_ASSETS_PATH "@ASSETS_INSTALL_FULL_DIR@"
+# else
+#  error Unspecified installation type
+# endif
 
 #endif

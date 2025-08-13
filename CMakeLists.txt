@@ -29,6 +29,9 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
 endif()
 
+# options
+option(SUBMACHINE_INSTALL "Whether to install the submachine binary and data" OFF)
+
 # add submachine binary
 add_executable(submachine)
 
@@ -67,6 +70,8 @@ set_target_properties(submachine PROPERTIES
     COMPILE_WARNING_AS_ERROR ON
     EXPORT_COMPILE_COMMANDS ON
 )
+
+target_compile_definitions(submachine PRIVATE SM_LOCAL_BUILD)
 
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/sm_build_config.h.in"
@@ -134,45 +139,54 @@ endforeach()
 add_custom_target(shaders DEPENDS ${SHADERCROSS_OUTPUT_FILES})
 add_dependencies(submachine shaders)
 
-# install submachine binary
-include(GNUInstallDirs)
-set(CONFIG_INSTALL_DIR "cmake")
+# submachine installation
+if(SUBMACHINE_INSTALL)
+    get_property(SUBMACHINE_DEFINITIONS TARGET submachine PROPERTY COMPILE_DEFINITIONS)
+    list(REMOVE_ITEM SUBMACHINE_DEFINITIONS SM_LOCAL_BUILD)
+    set_property(TARGET submachine PROPERTY COMPILE_DEFINITIONS SUBMACHINE_DEFINITIONS)
+    target_compile_definitions(submachine PRIVATE SM_LOCAL_INSTALL)
 
-install(TARGETS submachine
-    EXPORT submachine-targets
-    ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-)
-install(EXPORT submachine-targets
-    DESTINATION "${CONFIG_INSTALL_DIR}"
-    NAMESPACE cottoncammy::
-    FILE submachine-targets.cmake
-)
+    include(GNUInstallDirs)
+    set(CONFIG_INSTALL_DIR "cmake")
+    set(ASSETS_INSTALL_DIR "${CMAKE_INSTALL_DATADIR}/assets/submachine")
+    set(ASSETS_INSTALL_FULL_DIR "${CMAKE_INSTALL_FULL_DATADIR}/assets/submachine")
 
-# install wuffs
-set(WUFFS_INSTALL_PATH "${CMAKE_CURRENT_BINARY_DIR}/vendor/wuffs")
-install(FILES
-    "${WUFFS_INSTALL_PATH}/wuffs-base.c"
-    "${WUFFS_INSTALL_PATH}/wuffs-submachine.c"
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/wuffs"
-)
+    install(TARGETS submachine
+        EXPORT submachine-targets
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+    )
+    install(EXPORT submachine-targets
+        DESTINATION "${CONFIG_INSTALL_DIR}"
+        NAMESPACE cottoncammy::
+        FILE submachine-targets.cmake
+    )
 
-# install shaders
-install(FILES ${SHADERCROSS_OUTPUT_FILES} DESTINATION "${CMAKE_INSTALL_DATADIR}/shaders")
+    # install wuffs
+    set(WUFFS_INSTALL_PATH "${CMAKE_CURRENT_BINARY_DIR}/vendor/wuffs")
+    install(FILES
+        "${WUFFS_INSTALL_PATH}/wuffs-base.c"
+        "${WUFFS_INSTALL_PATH}/wuffs-submachine.c"
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/wuffs"
+    )
 
-# install CMake config
-include(CMakePackageConfigHelpers)
-write_basic_package_version_file(
-    submachine-config-version.cmake
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY ExactVersion
-)
-configure_package_config_file("${CMAKE_CURRENT_LIST_DIR}/cmake/submachine-config.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/submachine-config.cmake"
-    INSTALL_DESTINATION "${CONFIG_INSTALL_DIR}"
-    NO_SET_AND_CHECK_MACRO
-)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/submachine-config.cmake"
-    "${CMAKE_CURRENT_BINARY_DIR}/submachine-config-version.cmake"
-    DESTINATION "${CONFIG_INSTALL_DIR}"
-)
+    # install shaders
+    install(FILES ${SHADERCROSS_OUTPUT_FILES} DESTINATION "${ASSETS_INSTALL_DIR}")
+
+    # install CMake config
+    include(CMakePackageConfigHelpers)
+    write_basic_package_version_file(
+        submachine-config-version.cmake
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY ExactVersion
+    )
+    configure_package_config_file("${CMAKE_CURRENT_LIST_DIR}/cmake/submachine-config.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/submachine-config.cmake"
+        INSTALL_DESTINATION "${CONFIG_INSTALL_DIR}"
+        NO_SET_AND_CHECK_MACRO
+    )
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/submachine-config.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/submachine-config-version.cmake"
+        DESTINATION "${CONFIG_INSTALL_DIR}"
+    )
+endif()

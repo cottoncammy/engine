@@ -11,7 +11,7 @@
 #include "sm_entrypoint.h"
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
-    if(!SDL_SetAppMetadata(SUBMACHINE_NAME, SUBMACHINE_VERSION_STRING, "dev.cottoncammy.submachine")) {
+    if(!SDL_SetAppMetadata(SM_INFO_STRING, SM_VERSION_STRING, "dev.cottoncammy.submachine")) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to set SDL app metadata: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
@@ -31,7 +31,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     SDL_WINDOWPOS_CENTERED;
 
     SDL_WindowFlags windowFlags = SDL_WINDOW_HIGH_PIXEL_DENSITY;
-    SDL_Window *window = SDL_CreateWindow(SUBMACHINE_NAME, 960, 600, windowFlags);
+    SDL_Window *window = SDL_CreateWindow(SM_INFO_STRING, 960, 600, windowFlags);
     if(window == NULL) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create SDL window: %s", SDL_GetError());
         goto err2;
