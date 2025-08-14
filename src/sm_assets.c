@@ -23,11 +23,13 @@
 
 static bool sm_getWideStr(size_t nc_len, const char *nc, size_t dstlen, wchar_t *dst) {
     size_t converted = 0;
-    if(mbstowcs_s(&converted, dst, dstlen / sizeof(wchar_t), nc, strnlen_s(nc, nc_len)) != 0) {
+    const size_t actual_len = strnlen_s(nc, nc_len);
+    assert(nc[actual_len] == '\0'); // make sure we found the actual length
+    if(mbstowcs_s(&converted, dst, dstlen / sizeof(wchar_t), nc, actual_len) != 0) {
         goto err;
     }
-    // make sure we converted the number of chars in the narrow string
-    if(converted != strnlen_s(nc, nc_len)+1) {
+    // make sure we converted the number of chars in the narrow string plus a null terminator
+    if(converted != actual_len+1) {
         goto err;
     }
     assert(dst[converted-1] == '\0');
@@ -40,11 +42,13 @@ static bool sm_getWideStr(size_t nc_len, const char *nc, size_t dstlen, wchar_t 
 
 static bool sm_getNarrowStr(size_t wc_len, const wchar_t *wc, size_t dstlen, char *dst) {
     size_t converted = 0;
+    const size_t actual_len = wcsnlen_s(wc, wc_len);
+    assert(wc[actual_len] == '\0'); // make sure we found the actual length
     if(wcstombs_s(&converted, dst, dstlen, wc, dstlen-1) != 0) {
         goto err;
     }
-    // make sure we converted the number of chars in the wide string
-    if(converted != wcsnlen_s(wc, wc_len)+1) {
+    // make sure we converted the number of chars in the wide string plus a null terminator
+    if(converted != actual_len+1) {
         goto err;
     }
 
@@ -77,21 +81,23 @@ static bool sm_appendPath(size_t *wc_dstlen, wchar_t *wc_dst, size_t nc_dstlen, 
     }
 
     // make sure the string isn't longer than MAX_PATH
-    const size_t actual_len = strlen(nc_dst);
-    assert(actual_len > 0 && actual_len <= MAX_PATH);
+    const size_t actual_len = strnlen_s(nc_dst, nc_dstlen);
     assert(nc_dst[actual_len] == '\0');
+    assert(actual_len > 0 && actual_len <= MAX_PATH);
 
 #endif
     return true;
 }
 
-static bool sm_getFileExt(const void *fpath, size_t dstlen, char* dst) {
+static bool sm_getFileExt(size_t fpath_len, const void *fpath, size_t dstlen, char* dst) {
 #ifdef SDL_PLATFORM_WIN32
     wchar_t wc_dst[MAX_PATH] = { 0 };
     wchar_t *wc_fpath = (wchar_t*)fpath;
     const wchar_t **wc_dstptr = (const wchar_t**)&wc_dst;
+    const size_t wc_len = wcsnlen_s(wc_fpath, fpath_len);
+    assert(wc_fpath[wc_len] == '\0'); // make sure we found the actual length
 
-    const HRESULT hresult = PathCchFindExtension(wc_fpath, wcslen(wc_fpath)+1, wc_dstptr);
+    const HRESULT hresult = PathCchFindExtension(wc_fpath, wc_len+1, wc_dstptr);
     if(FAILED(hresult) || (wc_dstptr && **wc_dstptr == '\0')) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to extract file extension: error code %ld (%s:%s)", HRESULT_CODE(hresult), __FILE_NAME__, __FUNCTION__);
         return false;
@@ -138,7 +144,10 @@ static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata, const char
     // append the filename to the buffer
     wchar_t wc_fpath[MAX_PATH] = { 0 };
     size_t wc_fpath_len = sizeof(wc_fpath);
-    if(!sm_appendPath(&wc_fpath_len, wc_fpath, sizeof(nc_fpath), nc_fpath, strnlen_s(fname, MAX_PATH), fname)) {
+
+    const size_t fname_len = strnlen_s(fname, MAX_PATH);
+    assert(fname[fname_len] == '\0'); // make sure we found the actual length
+    if(!sm_appendPath(&wc_fpath_len, wc_fpath, sizeof(nc_fpath), nc_fpath, fname_len, fname)) {
         return SDL_ENUM_FAILURE;
     }
 
@@ -155,11 +164,9 @@ static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata, const char
 
     // check the file extension
     char ext[MAX_PATH] = { 0 };
-    if (!sm_getFileExt((void*)wc_fpath, sizeof(ext), ext)) {
+    if (!sm_getFileExt(wc_fpath_len, (void*)wc_fpath, sizeof(ext), ext)) {
         return SDL_ENUM_FAILURE;
     }
-
-    printf("ext=%s\n", ext);
 
 #endif
     return SDL_ENUM_CONTINUE;
