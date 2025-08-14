@@ -97,7 +97,6 @@ target_sources(submachine
 target_link_libraries(submachine PRIVATE
     SDL3::SDL3
     wuffs_base
-    wuffs_submachine
 )
 
 if(WIN32)
@@ -160,16 +159,6 @@ if(SUBMACHINE_INSTALL)
         DESTINATION "${CMAKE_CONFIG_INSTALL_PATH}"
         NAMESPACE cottoncammy::
         FILE submachine-targets.cmake
-    )
-
-    # install wuffs
-    if(NOT WUFFS_INSTALL_PATH)
-        message(FATAL_ERROR "the wuffs install path isn't in the CMake cache")
-    endif()
-    install(FILES
-        "${WUFFS_INSTALL_PATH}/wuffs-base.c"
-        "${WUFFS_INSTALL_PATH}/wuffs-submachine.c"
-        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/wuffs"
     )
 
     # install shaders
