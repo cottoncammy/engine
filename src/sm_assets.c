@@ -1,12 +1,14 @@
+#include "SDL3/SDL_error.h"
 #include <SDL3/SDL_filesystem.h>
 #include <SDL3/SDL_log.h>
 
 #ifdef SDL_PLATFORM_WIN32
 # include <windows.h>
 # include <pathcch.h>
-# include <winerror.h>
 #endif
+#include <assert.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -15,7 +17,7 @@
 #ifdef SDL_PLATFORM_WIN32
 static bool sm_getWideString(const char *narrow, size_t dstlen, wchar_t *dst) {
     size_t converted = 0;
-    if (mbstowcs_s(&converted, dst, dstlen / sizeof(wchar_t), narrow, strlen(narrow)) != 0) {
+    if(mbstowcs_s(&converted, dst, dstlen / sizeof(wchar_t), narrow, strlen(narrow)) != 0) {
         goto err;
     }
     if(converted != strlen(narrow)+1) {
@@ -30,7 +32,7 @@ static bool sm_getWideString(const char *narrow, size_t dstlen, wchar_t *dst) {
 
 static bool sm_getNarrowString(const wchar_t *wide, size_t dstlen, char *dst) {
     size_t converted = 0;
-    if (wcstombs_s(&converted, dst, dstlen, wide, dstlen-1) != 0) {
+    if(wcstombs_s(&converted, dst, dstlen, wide, dstlen-1) != 0) {
         goto err;
     }
     if(converted != wcslen(wide)+1) {
@@ -44,25 +46,19 @@ static bool sm_getNarrowString(const wchar_t *wide, size_t dstlen, char *dst) {
 }
 #endif
 
-static bool sm_getAssetsPath(size_t dstlen, char *dst) {
-    const char *bin = SDL_GetBasePath();
+static bool sm_appendPath(size_t dstlen, char *dst, const char *append) {
 #ifdef SDL_PLATFORM_WIN32
-    if(strcpy_s(dst, dstlen / 2, bin) != 0) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to copy string: file %s", __FILE__);
-        return false;
-    }
     wchar_t wc_dst[MAX_PATH+1] = { 0 };
     if(!sm_getWideString(dst, sizeof(wc_dst), wc_dst)) {
         return false;
     }
-    const char *append = "assets";
     wchar_t wc_append[MAX_PATH+1] = { 0 };
     if(!sm_getWideString(append, sizeof(wc_append), wc_append)) {
         return false;
     }
 
-    const HRESULT hresult = PathCchAppend(wc_dst, sizeof(wc_dst), wc_append);
-    if (FAILED(hresult)) {
+    const HRESULT hresult = PathCchAppend(wc_dst, dstlen, wc_append);
+    if(FAILED(hresult)) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to append path: error code %ld, file %s", HRESULT_CODE(hresult), __FILE__);
         return false;
     }
@@ -71,10 +67,24 @@ static bool sm_getAssetsPath(size_t dstlen, char *dst) {
         return false;
     }
 
-    return true;
-#else
-# error Unsupported platform
+    size_t actual_len = strlen(dst);
+    assert(actual_len > 0 && actual_len < MAX_PATH && dst[actual_len] == '\0');
 #endif
+    return true;
+}
+
+static bool sm_getAssetsPath(size_t dstlen, char *dst) {
+    const char *bin = SDL_GetBasePath();
+    if(strcpy_s(dst, dstlen / 2, bin) != 0) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to copy string: file %s", __FILE__);
+        return false;
+    }
+
+    const char *append = "assets";
+    if(!sm_appendPath(dstlen, dst, append)) {
+        return false;
+    }
+    return true;
 }
 
 static struct sm_assets_state {
@@ -84,7 +94,28 @@ static struct sm_assets_state {
 
 static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata, const char *dirname, const char *fname) {
     struct sm_assets_state *state = (struct sm_assets_state*)userdata;
-    return SDL_ENUM_SUCCESS;
+#ifdef SDL_PLATFORM_WIN32
+    char fpath[(MAX_PATH + 1) * 2] = { 0 };
+    if(strcpy_s(fpath, sizeof(fpath) / 2, state->assets_path) != 0) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to copy string: file %s", __FILE__);
+        return SDL_ENUM_FAILURE;
+    }
+    if(!sm_appendPath(sizeof(fpath), fpath, fname)) {
+        return SDL_ENUM_FAILURE;
+    }
+
+    SDL_PathInfo info = { 0 };
+    if(!SDL_GetPathInfo(fpath, &info)) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to get SDL path info: %s", SDL_GetError());
+        return SDL_ENUM_FAILURE;
+    }
+    if(info.type != SDL_PATHTYPE_FILE) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Found unexpected item in assets dir");
+        return SDL_ENUM_FAILURE;
+    }
+
+#endif
+    return SDL_ENUM_CONTINUE;
 }
 
 bool sm_initAssets(sm_state* state) {
@@ -94,6 +125,25 @@ bool sm_initAssets(sm_state* state) {
     if(!sm_getAssetsPath(sizeof(assets_path), assets_path)) {
         return false;
     }
+
+    SDL_PathInfo info = { 0 };
+    if(!SDL_GetPathInfo(assets_path, &info)) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to get SDL path info: %s", SDL_GetError());
+        return false;
+    }
+    if(info.type != SDL_PATHTYPE_DIRECTORY) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Assets path doesn't point to a dir");
+        return false;
+    }
+
+    struct sm_assets_state assets_state = {
+        .appstate = state,
+        .assets_path = assets_path,
+    };
+    if(!SDL_EnumerateDirectory(assets_path, sm_walkAssetsDir, &assets_state)) {
+        return false;
+    }
+
     return true;
 }
 

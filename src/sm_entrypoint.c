@@ -14,19 +14,19 @@
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     if(!SDL_SetAppMetadata(SM_INFO_STRING, SM_VERSION_STRING, "dev.cottoncammy.submachine")) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to set SDL app metadata: %s, file %s", SDL_GetError(), __FILE__);
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to set SDL app metadata: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
 
     if(!SDL_Init(SDL_INIT_VIDEO)) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to initialize SDL: %s, file %s", SDL_GetError(), __FILE__);
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to initialize SDL: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
 
     const SDL_GPUShaderFormat device_flags = SDL_GPU_SHADERFORMAT_DXIL | SDL_GPU_SHADERFORMAT_SPIRV;
     SDL_GPUDevice *device = SDL_CreateGPUDevice(device_flags, true, NULL);
     if(device == NULL) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create SDL GPU device: %s, file %s", SDL_GetError(), __FILE__);
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create SDL GPU device: %s", SDL_GetError());
         goto err1;
     }
 
@@ -35,18 +35,18 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     const SDL_WindowFlags window_flags = SDL_WINDOW_HIGH_PIXEL_DENSITY;
     SDL_Window *window = SDL_CreateWindow(SM_INFO_STRING, 960, 600, window_flags);
     if(window == NULL) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create SDL window: %s, file %s", SDL_GetError(), __FILE__);
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create SDL window: %s", SDL_GetError());
         goto err2;
     }
 
     if(!SDL_ClaimWindowForGPUDevice(device, window)) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create swapchain for SDL window: %s, file %s", SDL_GetError(), __FILE__);
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create swapchain for SDL window: %s", SDL_GetError());
         goto err3;
     }
 
     sm_state *state = malloc(sizeof(sm_state));
     if(state == NULL) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Heap allocation failed: state, file %s", __FILE__);
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Heap allocation failed: state");
         goto err4;
     }
     state->device = device;

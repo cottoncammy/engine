@@ -3,6 +3,13 @@
 # if !defined _MSC_VER
 #  error Unsupported compiler
 # endif
+# if !defined __STDC_VERSION__ || __STDC_VERSION__ < 201112L
+#  error Unsupported C standard
+# endif
+# include <SDL3/SDL_platform_defines.h>
+# ifndef SDL_PLATFORM_WIN32
+#  error Unsupported platform
+# endif
 
 # define SM_INFO_STRING "Submachine Engine"
 # define SM_VERSION_STRING "@CMAKE_PROJECT_VERSION@"
