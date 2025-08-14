@@ -1,5 +1,9 @@
 #pragma once
 
-_Bool sm_assets_init();
+#include <stdbool.h>
 
-_Bool sm_shader_init();
+#include "sm_entrypoint.h"
+
+bool sm_initAssets(sm_state* state);
+
+void sm_deinitAssets(sm_state* state);

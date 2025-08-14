@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.50 FATAL_ERROR)
 project(submachine VERSION 0.1.0 LANGUAGES C)
 
 # check build config
-if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows" OR NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "AMD64")
+if(NOT WIN32 OR NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "AMD64")
     message(FATAL_ERROR "only builds targeting Windows x64 are supported")
 endif()
 
@@ -30,7 +30,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # options
-option(SUBMACHINE_INSTALL "Whether to install the submachine binary and data" ON)
+option(SUBMACHINE_INSTALL "Whether to install the submachine binary and data" OFF)
 
 # add submachine binary
 add_executable(submachine)
@@ -61,9 +61,6 @@ endif()
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/build-wuffs.cmake")
 
-# this must be set to be known to sm_build_config.h during local builds
-set(SUBMACHINE_ASSETS_PATH "${CMAKE_CURRENT_BINARY_DIR}/assets")
-
 # configure submachine binary
 target_compile_features(submachine PRIVATE c_std_11)
 set_target_properties(submachine PROPERTIES
@@ -90,8 +87,10 @@ target_sources(submachine
             src
         FILES
             "${CMAKE_CURRENT_BINARY_DIR}/sm_build_config.h"
+            src/sm_assets.h
             src/sm_entrypoint.h
     PRIVATE
+        src/sm_assets.c
         src/sm_entrypoint.c
 )
 
@@ -101,12 +100,16 @@ target_link_libraries(submachine PRIVATE
     wuffs_submachine
 )
 
+if(WIN32)
+    target_link_libraries(submachine PRIVATE pathcch)
+endif()
+
 # compile shaders
 set(SHADERCROSS_INPUT_FILES
     assets/shaders/foo.vert.hlsl
 )
 list(TRANSFORM SHADERCROSS_INPUT_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
-set(SHADERS_INSTALL_PATH "${SUBMACHINE_ASSETS_PATH}")
+set(SHADERS_INSTALL_PATH "${CMAKE_CURRENT_BINARY_DIR}/assets")
 set(SHADERCROSS_OUTPUT_FILES)
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/paths.cmake")
@@ -182,7 +185,6 @@ if(SUBMACHINE_INSTALL)
     configure_package_config_file("${CMAKE_CURRENT_LIST_DIR}/cmake/submachine-config.cmake.in"
         "${CMAKE_CURRENT_BINARY_DIR}/submachine-config.cmake"
         INSTALL_DESTINATION "${CMAKE_CONFIG_INSTALL_PATH}"
-        PATH_VARS ASSETS_INSTALL_PATH
         NO_SET_AND_CHECK_MACRO
     )
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/submachine-config.cmake"

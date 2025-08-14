@@ -7,6 +7,4 @@
 # define SM_INFO_STRING "Submachine Engine"
 # define SM_VERSION_STRING "@CMAKE_PROJECT_VERSION@"
 
-# define SM_ASSETS_PATH "@SUBMACHINE_ASSETS_PATH@"
-
 #endif
