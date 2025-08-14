@@ -14,8 +14,8 @@
 #endif
 #include <assert.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "sm_assets.h"
@@ -23,8 +23,7 @@
 #ifdef SDL_PLATFORM_WIN32
 static bool sm_getWideStr(const char *narrow, size_t dstlen, wchar_t *dst) {
     size_t converted = 0;
-    size_t wordsSize = dstlen / sizeof(wchar_t); // the number of wide characters that can be stored
-    if(mbstowcs_s(&converted, dst, wordsSize, narrow, wordsSize-1) != 0) {
+    if(mbstowcs_s(&converted, dst, dstlen / sizeof(wchar_t), narrow, strlen(narrow)) != 0) {
         goto err;
     }
     // make sure we converted the number of chars in the narrow string plus a null terminator
@@ -63,13 +62,13 @@ static bool sm_appendPath(size_t *wc_dstlen, void *wc_dst, size_t nc_dstlen, cha
     if(!sm_getWideStr(nc_dst, *wc_dstlen, (wchar_t*)wc_dst)) {
         return false;
     }
-    wchar_t wc_append[MAX_PATH+1] = { 0 };
+    wchar_t wc_append[MAX_PATH] = { 0 };
     if(!sm_getWideStr(append, sizeof(wc_append), wc_append)) {
         return false;
     }
 
     // append the path segment and store result back into the narrow string
-    const HRESULT hresult = PathCchAppend((wchar_t*)wc_dst, nc_dstlen, wc_append);
+    const HRESULT hresult = PathCchAppend((wchar_t*)wc_dst, *wc_dstlen / sizeof(wchar_t), wc_append);
     if(FAILED(hresult)) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to append path %s to %s: error code %ld (%s:%s)", append, nc_dst, HRESULT_CODE(hresult), __FILE_NAME__, __FUNCTION__);
         return false;
@@ -79,9 +78,22 @@ static bool sm_appendPath(size_t *wc_dstlen, void *wc_dst, size_t nc_dstlen, cha
     }
 
     // make sure the string length isn't longer than MAX_PATH
-    size_t actual_len = strlen(nc_dst);
+    const size_t actual_len = strlen(nc_dst);
     assert(actual_len > 0 && actual_len <= MAX_PATH);
     assert(nc_dst[actual_len] == '\0');
+
+#endif
+    return true;
+}
+
+static bool sm_getFileExt(const void *fpath, const void **dst) {
+#ifdef SDL_PLATFORM_WIN32
+    const wchar_t *wc_fpath = (wchar_t*)fpath;
+    const HRESULT hresult = PathCchFindExtension(wc_fpath, wcslen(wc_fpath)+1, (const wchar_t**)dst);
+    if(FAILED(hresult) || (dst && *(wchar_t*)dst == '\0')) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to extract file extension: error code %ld (%s:%s)", HRESULT_CODE(hresult), __FILE_NAME__, __FUNCTION__);
+        return false;
+    }
 
 #endif
     return true;
@@ -96,7 +108,7 @@ static bool sm_getAssetsPath(size_t dstlen, char *dst) {
     }
 
 #if SDL_PLATFORM_WIN32
-    wchar_t wc_dst[MAX_PATH+1] = { 0 };
+    wchar_t wc_dst[MAX_PATH] = { 0 };
     size_t wc_dstlen = sizeof(wc_dst);
     const char *append = "assets";
     if(!sm_appendPath(&wc_dstlen, (void*)wc_dst, dstlen, dst, append)) {
@@ -115,13 +127,15 @@ static struct sm_assets_state {
 static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata, const char *dirname, const char *fname) {
     struct sm_assets_state *state = (struct sm_assets_state*)userdata;
 #ifdef SDL_PLATFORM_WIN32
-    // append the filename to the assets_path
-    char nc_fpath[(MAX_PATH+1) * 2] = { 0 };
+    // copy the assets_path to a new buffer
+    char nc_fpath[MAX_PATH*2] = { 0 };
     if(strcpy_s(nc_fpath, sizeof(nc_fpath) / 2, state->assets_path) != 0) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to copy string %s to %s (%s:%s)", state->assets_path, nc_fpath, __FILE_NAME__, __FUNCTION__);
         return SDL_ENUM_FAILURE;
     }
-    wchar_t wc_fpath[MAX_PATH+1] = { 0 };
+
+    // append the filename to the buffer
+    wchar_t wc_fpath[MAX_PATH] = { 0 };
     size_t wc_fpath_len = sizeof(wc_fpath);
     if(!sm_appendPath(&wc_fpath_len, wc_fpath, sizeof(nc_fpath), nc_fpath, fname)) {
         return SDL_ENUM_FAILURE;
@@ -139,6 +153,10 @@ static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata, const char
     }
 
     // check the file type
+    wchar_t ext[MAX_PATH] = { 0 };
+    if (!sm_getFileExt((void*)wc_fpath, (const void**)&ext)) {
+        return SDL_ENUM_FAILURE;
+    }
 
 #endif
     return SDL_ENUM_CONTINUE;
@@ -146,9 +164,9 @@ static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata, const char
 
 bool sm_initAssets(sm_state* state) {
 #ifdef SDL_PLATFORM_WIN32
-    // allocate 2 bytes for each allowed character in the path (plus a null terminator)
+    // allocate 2 bytes for each allowed character in the path
     // so we can safely store the wide string result in the narrow string
-    char assets_path[(MAX_PATH+1) * 2] = { 0 };
+    char assets_path[MAX_PATH*2] = { 0 };
 #endif
     if(!sm_getAssetsPath(sizeof(assets_path), assets_path)) {
         return false;
