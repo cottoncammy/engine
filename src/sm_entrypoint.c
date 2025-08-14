@@ -7,7 +7,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 #include "sm_assets.h"
 #include "sm_entrypoint.h"
@@ -44,9 +43,10 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
         goto err3;
     }
 
+    int line = __builtin_LINE();
     sm_state *state = malloc(sizeof(sm_state));
     if(state == NULL) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Heap allocation failed: state");
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Heap allocation failed (%s:%s)", __FILE_NAME__, __FUNCTION__);
         goto err4;
     }
     state->device = device;

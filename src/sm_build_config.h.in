@@ -1,14 +1,21 @@
 #ifndef SM_BUILD_CONFIG_H_
 # define SM_BUILD_CONFIG_H_
-# if !defined _MSC_VER
+# if !defined _MSC_VER || _MSC_VER < 1930
 #  error Unsupported compiler
 # endif
-# if !defined __STDC_VERSION__ || __STDC_VERSION__ < 201112L
-#  error Unsupported C standard
+# if !defined __clang__ || __clang_major__ < 19
+#  error Unsupported compiler
 # endif
+
 # include <SDL3/SDL_platform_defines.h>
 # ifndef SDL_PLATFORM_WIN32
 #  error Unsupported platform
+# endif
+
+# ifndef __STDC_VERSION__
+#  error Can't determine C standard
+# elif __STDC_VERSION__ != 201112L
+#  error Unsupported C standard
 # endif
 
 # define SM_INFO_STRING "Submachine Engine"
