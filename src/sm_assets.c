@@ -2,6 +2,12 @@
 #include <SDL3/SDL_filesystem.h>
 #include <SDL3/SDL_log.h>
 
+#define WUFFS_IMPLEMENTATION
+#define WUFFS_CONFIG__MODULES
+#define WUFFS_CONFIG__MODULE__BASE
+#define WUFFS_CONFIG__MODULE__JSON
+#include <wuffs/wuffs-base.c> // NOLINT(bugprone-suspicious-include)
+
 #ifdef SDL_PLATFORM_WIN32
 # include <windows.h>
 # include <pathcch.h>
@@ -9,80 +15,95 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "sm_assets.h"
 
 #ifdef SDL_PLATFORM_WIN32
-static bool sm_getWideString(const char *narrow, size_t dstlen, wchar_t *dst) {
+static bool sm_getWideStr(const char *narrow, size_t dstlen, wchar_t *dst) {
     size_t converted = 0;
-    if(mbstowcs_s(&converted, dst, dstlen / sizeof(wchar_t), narrow, strlen(narrow)) != 0) {
+    size_t wordsSize = dstlen / sizeof(wchar_t); // the number of wide characters that can be stored
+    if(mbstowcs_s(&converted, dst, wordsSize, narrow, wordsSize-1) != 0) {
         goto err;
     }
+    // make sure we converted the number of chars in the narrow string plus a null terminator
     if(converted != strlen(narrow)+1) {
         goto err;
     }
-
+    assert(dst[converted-1] == '\0');
     return true;
+
     err:
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to convert narrow character string to wide character string (%s:%s)", __FILE_NAME__, __FUNCTION__);
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to convert narrow character string %s to wide character string (%s:%s)", narrow, __FILE_NAME__, __FUNCTION__);
         return false;
 }
 
-static bool sm_getNarrowString(const wchar_t *wide, size_t dstlen, char *dst) {
+static bool sm_getNarrowStr(const wchar_t *wide, size_t dstlen, char *dst) {
     size_t converted = 0;
     if(wcstombs_s(&converted, dst, dstlen, wide, dstlen-1) != 0) {
         goto err;
     }
+    // make sure we converted the number of chars in the wide string plus a null terminator
     if(converted != wcslen(wide)+1) {
         goto err;
     }
 
+    assert(dst[converted-1] == '\0');
     return true;
+
     err:
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to convert wide character string to narrow character string (%s:%s)", __FILE_NAME__, __FUNCTION__);
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to convert wide character string to narrow character string %s (%s:%s)", dst, __FILE_NAME__, __FUNCTION__);
         return false;
 }
 #endif
 
-static bool sm_appendPath(size_t dstlen, char *dst, const char *append) {
+static bool sm_appendPath(size_t *wc_dstlen, void *wc_dst, size_t nc_dstlen, char *nc_dst, const char *append) {
 #ifdef SDL_PLATFORM_WIN32
-    wchar_t wc_dst[MAX_PATH+1] = { 0 };
-    if(!sm_getWideString(dst, sizeof(wc_dst), wc_dst)) {
+    if(!sm_getWideStr(nc_dst, *wc_dstlen, (wchar_t*)wc_dst)) {
         return false;
     }
     wchar_t wc_append[MAX_PATH+1] = { 0 };
-    if(!sm_getWideString(append, sizeof(wc_append), wc_append)) {
+    if(!sm_getWideStr(append, sizeof(wc_append), wc_append)) {
         return false;
     }
 
-    const HRESULT hresult = PathCchAppend(wc_dst, dstlen, wc_append);
+    // append the path segment and store result back into the narrow string
+    const HRESULT hresult = PathCchAppend((wchar_t*)wc_dst, nc_dstlen, wc_append);
     if(FAILED(hresult)) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to append path: error code %ld (%s:%s)", HRESULT_CODE(hresult), __FILE_NAME__, __FUNCTION__);
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to append path %s to %s: error code %ld (%s:%s)", append, nc_dst, HRESULT_CODE(hresult), __FILE_NAME__, __FUNCTION__);
         return false;
     }
-    char nc_dst[(MAX_PATH+1) * 2] = { 0 };
-    if(!sm_getNarrowString(wc_dst, dstlen, dst)) {
+    if(!sm_getNarrowStr((wchar_t*)wc_dst, nc_dstlen, nc_dst)) {
         return false;
     }
 
-    size_t actual_len = strlen(dst);
-    assert(actual_len > 0 && actual_len < MAX_PATH && dst[actual_len] == '\0');
+    // make sure the string length isn't longer than MAX_PATH
+    size_t actual_len = strlen(nc_dst);
+    assert(actual_len > 0 && actual_len <= MAX_PATH);
+    assert(nc_dst[actual_len] == '\0');
+
 #endif
     return true;
 }
 
 static bool sm_getAssetsPath(size_t dstlen, char *dst) {
     const char *bin = SDL_GetBasePath();
+    // strcpy_s handles buffer overflows for us
     if(strcpy_s(dst, dstlen / 2, bin) != 0) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to copy string (%s:%s)", __FILE_NAME__, __FUNCTION__);
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to copy string %s to %s (%s:%s)", bin, dst, __FILE_NAME__, __FUNCTION__);
         return false;
     }
 
+#if SDL_PLATFORM_WIN32
+    wchar_t wc_dst[MAX_PATH+1] = { 0 };
+    size_t wc_dstlen = sizeof(wc_dst);
     const char *append = "assets";
-    if(!sm_appendPath(dstlen, dst, append)) {
+    if(!sm_appendPath(&wc_dstlen, (void*)wc_dst, dstlen, dst, append)) {
         return false;
     }
+
+#endif
     return true;
 }
 
@@ -94,18 +115,22 @@ static struct sm_assets_state {
 static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata, const char *dirname, const char *fname) {
     struct sm_assets_state *state = (struct sm_assets_state*)userdata;
 #ifdef SDL_PLATFORM_WIN32
-    char fpath[(MAX_PATH + 1) * 2] = { 0 };
-    if(strcpy_s(fpath, sizeof(fpath) / 2, state->assets_path) != 0) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to copy string (%s:%s)", __FILE_NAME__, __FUNCTION__);
+    // append the filename to the assets_path
+    char nc_fpath[(MAX_PATH+1) * 2] = { 0 };
+    if(strcpy_s(nc_fpath, sizeof(nc_fpath) / 2, state->assets_path) != 0) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to copy string %s to %s (%s:%s)", state->assets_path, nc_fpath, __FILE_NAME__, __FUNCTION__);
         return SDL_ENUM_FAILURE;
     }
-    if(!sm_appendPath(sizeof(fpath), fpath, fname)) {
+    wchar_t wc_fpath[MAX_PATH+1] = { 0 };
+    size_t wc_fpath_len = sizeof(wc_fpath);
+    if(!sm_appendPath(&wc_fpath_len, wc_fpath, sizeof(nc_fpath), nc_fpath, fname)) {
         return SDL_ENUM_FAILURE;
     }
 
+    // ensure the item is a file
     SDL_PathInfo info = { 0 };
-    if(!SDL_GetPathInfo(fpath, &info)) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to get SDL path info: %s (%s:%s)", SDL_GetError(), __FILE_NAME__, __FUNCTION__);
+    if(!SDL_GetPathInfo(nc_fpath, &info)) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to get SDL path info for %s: %s (%s:%s)", nc_fpath, SDL_GetError(), __FILE_NAME__, __FUNCTION__);
         return SDL_ENUM_FAILURE;
     }
     if(info.type != SDL_PATHTYPE_FILE) {
@@ -113,28 +138,33 @@ static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata, const char
         return SDL_ENUM_FAILURE;
     }
 
+    // check the file type
+
 #endif
     return SDL_ENUM_CONTINUE;
 }
 
 bool sm_initAssets(sm_state* state) {
 #ifdef SDL_PLATFORM_WIN32
+    // allocate 2 bytes for each allowed character in the path (plus a null terminator)
+    // so we can safely store the wide string result in the narrow string
     char assets_path[(MAX_PATH+1) * 2] = { 0 };
 #endif
     if(!sm_getAssetsPath(sizeof(assets_path), assets_path)) {
         return false;
     }
-
+    // ensure the asset path points to a dir
     SDL_PathInfo info = { 0 };
     if(!SDL_GetPathInfo(assets_path, &info)) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to get SDL path info: %s (%s:%s)", SDL_GetError(), __FILE_NAME__, __FUNCTION__);
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to get SDL path info for %s: %s (%s:%s)", assets_path, SDL_GetError(), __FILE_NAME__, __FUNCTION__);
         return false;
     }
     if(info.type != SDL_PATHTYPE_DIRECTORY) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Assets path doesn't point to a dir");
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Assets path (%s) doesn't point to a dir", assets_path);
         return false;
     }
 
+    // walk the dir
     struct sm_assets_state assets_state = {
         .appstate = state,
         .assets_path = assets_path,

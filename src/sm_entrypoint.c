@@ -33,7 +33,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 
     const SDL_WindowFlags window_flags = SDL_WINDOW_HIGH_PIXEL_DENSITY;
     SDL_Window *window = SDL_CreateWindow(SM_INFO_STRING, 960, 600, window_flags);
-    if(window == NULL) {
+    if(!window) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create SDL window: %s", SDL_GetError());
         goto err2;
     }
@@ -45,7 +45,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 
     int line = __builtin_LINE();
     sm_state *state = malloc(sizeof(sm_state));
-    if(state == NULL) {
+    if(!state) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Heap allocation failed (%s:%s)", __FILE_NAME__, __FUNCTION__);
         goto err4;
     }
@@ -55,6 +55,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 
     sm_initAssets(state);
     return SDL_APP_CONTINUE;
+
 err4:
     SDL_ReleaseWindowFromGPUDevice(device, window);
 err3:
