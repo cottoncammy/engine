@@ -5,6 +5,9 @@
 # endif
 # if !defined __clang__ || __clang_major__ < 19
 #  error Unsupported compiler
+# ifndef __STDC_LIB_EXT1__
+#  error Unsupported compiler
+# endif
 # endif
 
 # include <SDL3/SDL_platform_defines.h>
