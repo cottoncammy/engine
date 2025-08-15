@@ -43,7 +43,6 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
         goto err3;
     }
 
-    int line = __builtin_LINE();
     sm_state *state = malloc(sizeof(sm_state));
     if(!state) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Heap allocation failed (%s:%s)", __FILE_NAME__, __FUNCTION__);
@@ -53,7 +52,11 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     state->window = window;
     appstate = (void **)&state;
 
-    sm_initAssets(state);
+    if (!sm_initAssets(state)) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to initialize assets");
+        goto err4;
+    }
+
     return SDL_APP_CONTINUE;
 
 err4:
