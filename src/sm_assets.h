@@ -1,5 +1,7 @@
 #pragma once
 
+#define SM_SHADER_FOO 0
+
 #include <stdbool.h>
 
 #include "sm_entrypoint.h"

@@ -1,5 +1,4 @@
-#define SM_MAX_FILE 256
-
+#include "sm_entrypoint.h"
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_filesystem.h>
 #include <SDL3/SDL_log.h>
@@ -133,6 +132,7 @@ static bool sm_getAssetsPath(size_t dstlen, char *dst) {
     wchar_t wc_dst[SM_MAX_PATH] = { 0 };
     size_t wc_dstlen = sizeof(wc_dst);
     const char *append = "assets";
+    // we explicitly want sizeof rather than strlen
     // NOLINTNEXTLINE(bugprone-sizeof-expression)
     if(!sm_appendPath(&wc_dstlen, (void*)wc_dst, dstlen, dst, sizeof(append), append)) {
         return false;
@@ -159,11 +159,15 @@ static bool sm_readFile(struct sm_assets_state *state, const char *fname) {
 
     char buf[SM_MAX_FILE] = { 0 };
 #ifdef SDL_PLATFORM_WIN32
+    // use _fread_nolock because this call stack is single-threaded for now
+
+    // a widening conversion from a positive int to size_t won't matter here
+    // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
     const size_t bytes_read = _fread_nolock_s(buf, sizeof(buf), sizeof(char), SM_MAX_FILE, file);
 #endif
     if (ferror(file) != 0) {
         char errmsg[SM_MAX_ERRMSG] = { 0 };
-        assert(strerror_s(errmsg, sizeof(errmsg), errnum) != 0);
+        assert(strerror_s(errmsg, sizeof(errmsg), errno) != 0);
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to read file %s: %s", fname, errmsg);
         return false;
     }
@@ -174,7 +178,7 @@ static bool sm_readFile(struct sm_assets_state *state, const char *fname) {
 
     if (fclose(file) != 0) {
         char errmsg[SM_MAX_ERRMSG] = { 0 };
-        assert(strerror_s(errmsg, sizeof(errmsg), errnum) != 0);
+        assert(strerror_s(errmsg, sizeof(errmsg), errno) != 0);
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to close file %s: %s", fname, errmsg);
         return false;
     }
@@ -223,6 +227,8 @@ static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata, const char
         return SDL_ENUM_FAILURE;
     }
 
+    // get the file stem and try to map it to the LUT index
+
     // check the file extension
     if(strncmp(".json", ext, 5) == 0 ||
         strncmp(".dxil", ext, 5) == 0 ||
@@ -258,18 +264,40 @@ bool sm_initAssets(sm_state* state) {
         return false;
     }
 
+    // this is a good spot to initialize asset-related fields in the app state
+    state->shaders_len = 0;
+    state->shaders_buf = malloc(sizeof(char) * SM_MAX_SHADERS_BUF);
+    if(!state->shaders_buf) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Heap allocation failed (%s:%s)", __FILE_NAME__, __FUNCTION__);
+        return false;
+    }
+
+    state->shader_lut_len = 0;
+    state->shader_lookup = malloc(sizeof(sm_shaderinfo) * SM_MAX_SHADERS);
+    if(!state->shader_lookup) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Heap allocation failed (%s:%s)", __FILE_NAME__, __FUNCTION__);
+        goto err1;
+    }
+
     // walk the dir
     struct sm_assets_state assets_state = {
         .appstate = state,
         .assets_path = assets_path,
     };
     if(!SDL_EnumerateDirectory(assets_path, sm_walkAssetsDir, &assets_state)) {
-        return false;
+        goto err2;
     }
 
     return true;
+
+err2:
+    free(state->shader_lookup);
+err1:
+    free(state->shaders_buf);
+    return false;
 }
 
 void sm_deinitAssets(sm_state* state) {
-
+    free(state->shader_lookup);
+    free(state->shaders_buf);
 }

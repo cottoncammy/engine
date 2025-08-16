@@ -87,7 +87,8 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
     SDL_ReleaseWindowFromGPUDevice(state->device, state->window);
     SDL_DestroyWindow(state->window);
     SDL_DestroyGPUDevice(state->device);
-    free(state);
 
+    sm_deinitAssets(state);
+    free(state);
     SDL_Quit();
 }
