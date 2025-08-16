@@ -1,3 +1,5 @@
+#define SM_MAX_FILE 256
+
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_filesystem.h>
 #include <SDL3/SDL_log.h>
@@ -14,7 +16,6 @@
 # define SM_MAX_PATH MAX_PATH
 #endif
 #include <assert.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #define __STDC_WANT_LIB_EXT1__ 1
@@ -29,12 +30,13 @@ static bool sm_getWideStr(size_t nc_len, const char *nc, size_t dstlen, wchar_t 
     assert(nc[actual_len] == '\0'); // make sure we found the actual length
 
     if(mbstowcs_s(&converted, dst, dstlen / sizeof(wchar_t), nc, actual_len) != 0) {
-        char errmsg[256] = { 0 };
+        char errmsg[SM_MAX_ERRMSG] = { 0 };
         assert(_strerror_s(errmsg, sizeof(errmsg), NULL) != 0);
 
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to convert narrow character string %s to wide character string: %s (%s:%s)", nc, errmsg, __FILE_NAME__, __FUNCTION__);
         return false;
     }
+
     // make sure we converted the number of chars in the narrow string plus a null terminator
     if(converted != actual_len+1) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to convert narrow character string %s to wide character string (%s:%s)", nc, __FILE_NAME__, __FUNCTION__);
@@ -48,7 +50,7 @@ static bool sm_getWideStr(size_t nc_len, const char *nc, size_t dstlen, wchar_t 
 static bool sm_getNarrowStr(size_t wc_len, const wchar_t *wc, size_t dstlen, char *dst) {
     size_t converted = 0;
     if(wcstombs_s(&converted, dst, dstlen, wc, dstlen-1) != 0) {
-        char errmsg[256] = { 0 };
+        char errmsg[SM_MAX_ERRMSG] = { 0 };
         assert(_strerror_s(errmsg, sizeof(errmsg), NULL) != 0);
 
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to convert wide character string to narrow character string %s: %s (%s:%s)", dst, errmsg, __FILE_NAME__, __FUNCTION__);
@@ -57,6 +59,7 @@ static bool sm_getNarrowStr(size_t wc_len, const wchar_t *wc, size_t dstlen, cha
 
     const size_t actual_len = wcsnlen_s(wc, wc_len);
     assert(wc[actual_len] == '\0'); // make sure we found the actual length
+
     // make sure we converted the number of chars in the wide string plus a null terminator
     if(converted != actual_len+1) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to convert wide character string to narrow character string %s (%s:%s)", dst, __FILE_NAME__, __FUNCTION__);
@@ -119,7 +122,7 @@ static bool sm_getAssetsPath(size_t dstlen, char *dst) {
     const char *bin = SDL_GetBasePath();
     const errno_t errnum = strcpy_s(dst, dstlen / 2, bin);
     if(errnum != 0) {
-        char errmsg[256] = { 0 };
+        char errmsg[SM_MAX_ERRMSG] = { 0 };
         assert(strerror_s(errmsg, sizeof(errmsg), errnum) != 0);
 
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to copy string %s to %s: %s (%s:%s)", bin, dst, errmsg, __FILE_NAME__, __FUNCTION__);
@@ -144,20 +147,44 @@ static struct sm_assets_state {
     const char *assets_path;
 } sm_assets_state;
 
-static bool sm_readFile() {
+static bool sm_readFile(struct sm_assets_state *state, const char *fname) {
+    FILE *file = NULL;
+    const errno_t errnum = fopen_s(&file, fname, "rb");
+    if (errnum != 0) {
+        char errmsg[SM_MAX_ERRMSG] = { 0 };
+        assert(strerror_s(errmsg, sizeof(errmsg), errnum) != 0);
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to open file %s: %s", fname, errmsg);
+        return false;
+    }
+
+    char buf[SM_MAX_FILE] = { 0 };
+#ifdef SDL_PLATFORM_WIN32
+    const size_t bytes_read = _fread_nolock_s(buf, sizeof(buf), sizeof(char), SM_MAX_FILE, file);
+#endif
+    if (ferror(file) != 0) {
+        char errmsg[SM_MAX_ERRMSG] = { 0 };
+        assert(strerror_s(errmsg, sizeof(errmsg), errnum) != 0);
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to read file %s: %s", fname, errmsg);
+        return false;
+    }
+    if (bytes_read == 0) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "File %s was empty", fname);
+        return false;
+    }
+
     return true;
 }
 
 static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata, const char *dirname, const char *fname) {
     struct sm_assets_state *state = (struct sm_assets_state*)userdata;
     // copy the assets_path to a new buffer
-    char nc_fpath[SM_MAX_PATH*2] = { 0 };
-    const errno_t errnum = strcpy_s(nc_fpath, sizeof(nc_fpath) / 2, state->assets_path);
-    if(strcpy_s(nc_fpath, sizeof(nc_fpath) / 2, state->assets_path) != 0) {
-        char errmsg[256] = { 0 };
+    char fpath[SM_MAX_PATH*2] = { 0 };
+    const errno_t errnum = strcpy_s(fpath, sizeof(fpath) / 2, state->assets_path);
+    if(strcpy_s(fpath, sizeof(fpath) / 2, state->assets_path) != 0) {
+        char errmsg[SM_MAX_ERRMSG] = { 0 };
         assert(strerror_s(errmsg, sizeof(errmsg), errnum) != 0);
 
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to copy string %s to %s: %s (%s:%s)", state->assets_path, nc_fpath, errmsg, __FILE_NAME__, __FUNCTION__);
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to copy string %s to %s: %s (%s:%s)", state->assets_path, fpath, errmsg, __FILE_NAME__, __FUNCTION__);
         return SDL_ENUM_FAILURE;
     }
 
@@ -165,16 +192,17 @@ static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata, const char
     // append the filename to the buffer
     wchar_t wc_fpath[MAX_PATH] = { 0 };
     size_t wc_fpath_len = sizeof(wc_fpath);
+
     const size_t fname_len = strnlen_s(fname, MAX_PATH);
     assert(fname[fname_len] == '\0'); // make sure we found the actual length
-    if(!sm_appendPath(&wc_fpath_len, wc_fpath, sizeof(nc_fpath), nc_fpath, fname_len, fname)) {
+    if(!sm_appendPath(&wc_fpath_len, wc_fpath, sizeof(fpath), fpath, fname_len, fname)) {
         return SDL_ENUM_FAILURE;
     }
 
     // ensure the item is a file
     SDL_PathInfo info = { 0 };
-    if(!SDL_GetPathInfo(nc_fpath, &info)) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to get SDL path info for %s: %s (%s:%s)", nc_fpath, SDL_GetError(), __FILE_NAME__, __FUNCTION__);
+    if(!SDL_GetPathInfo(fpath, &info)) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to get SDL path info for %s: %s (%s:%s)", fpath, SDL_GetError(), __FILE_NAME__, __FUNCTION__);
         return SDL_ENUM_FAILURE;
     }
     if(info.type != SDL_PATHTYPE_FILE) {
@@ -191,9 +219,11 @@ static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata, const char
     // check the file extension
     if(strncmp(".json", ext, 5) == 0 ||
         strncmp(".dxil", ext, 5) == 0 ||
-        strncmp(".spv", ext, 4) == 0) {
-
-        //
+        strncmp(".spv", ext, 4) == 0
+    ) {
+        if (!sm_readFile(state, fpath)) {
+            return SDL_ENUM_FAILURE;
+        }
     } else {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Found unexpected asset: %s", fname);
         return SDL_ENUM_FAILURE;
