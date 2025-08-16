@@ -1,6 +1,6 @@
 #pragma once
 
-#define SM_SHADER_FOO 0
+#define SM_SHADER_FOO_VERT 0
 
 #include <stdbool.h>
 
