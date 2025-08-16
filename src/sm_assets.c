@@ -172,6 +172,13 @@ static bool sm_readFile(struct sm_assets_state *state, const char *fname) {
         return false;
     }
 
+    if (fclose(file) != 0) {
+        char errmsg[SM_MAX_ERRMSG] = { 0 };
+        assert(strerror_s(errmsg, sizeof(errmsg), errnum) != 0);
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to close file %s: %s", fname, errmsg);
+        return false;
+    }
+
     return true;
 }
 
