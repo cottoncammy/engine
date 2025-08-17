@@ -6,7 +6,7 @@
 #define WUFFS_CONFIG__MODULES
 #define WUFFS_CONFIG__MODULE__BASE
 #define WUFFS_CONFIG__MODULE__JSON
-#include <wuffs/wuffs-base.c> // NOLINT(bugprone-suspicious-include)
+#include <wuffs/wuffs-base.c> // NOLINT: this is a single-header library
 
 #ifdef SDL_PLATFORM_WIN32
 # include <windows.h>
@@ -66,10 +66,18 @@ static bool sm_getNarrowStr(size_t wc_len, const wchar_t *wc, size_t dstlen, cha
     return true;
 }
 
+static bool sm_getWideStrPath(size_t nc_len, const char *nc, size_t dstlen, wchar_t *dst) {
+    bool result = sm_getWideStr(nc_len, nc, dstlen, dst);
+    const size_t actual_len = wcsnlen_s(dst, dstlen);
+    assert(dst[actual_len] == '\0'); // make sure we found the actual length
+    assert(actual_len > 0 && actual_len <= SM_MAX_PATH);
+    return result;
+}
+
 static bool sm_getNarrowStrPath(size_t wc_len, const wchar_t *wc, size_t dstlen, char *dst) {
     bool result = sm_getNarrowStr(wc_len, wc, dstlen, dst);
     const size_t actual_len = strnlen_s(dst, dstlen);
-    assert(dst[actual_len] == '\0');
+    assert(dst[actual_len] == '\0'); // make sure we found the actual length
     assert(actual_len > 0 && actual_len <= SM_MAX_PATH);
     return result;
 }
@@ -77,11 +85,11 @@ static bool sm_getNarrowStrPath(size_t wc_len, const wchar_t *wc, size_t dstlen,
 
 static bool sm_appendPath(size_t *wc_dstlen, wchar_t *wc_dst, size_t nc_dstlen, char *nc_dst, size_t append_len, const char *append) {
 #ifdef SDL_PLATFORM_WIN32
-    if(!sm_getWideStr(nc_dstlen, nc_dst, *wc_dstlen, wc_dst)) {
+    if(!sm_getWideStrPath(nc_dstlen, nc_dst, *wc_dstlen, wc_dst)) {
         return false;
     }
     wchar_t wc_append[SM_MAX_PATH] = { 0 };
-    if(!sm_getWideStr(append_len, append, sizeof(wc_append), wc_append)) {
+    if(!sm_getWideStrPath(append_len, append, sizeof(wc_append), wc_append)) {
         return false;
     }
 
@@ -116,7 +124,7 @@ static bool sm_getFileExt(size_t fpath_len, const void *fpath, size_t dstlen, ch
 static bool sm_getFileStem(size_t fname_len, const char *fname, size_t dstlen, char *dst) {
 #ifdef SDL_PLATFORM_WIN32
     wchar_t wc_fname[SM_MAX_PATH] = { 0 };
-    if(!sm_getWideStr(fname_len, fname, sizeof(wc_fname), wc_fname)) {
+    if(!sm_getWideStrPath(fname_len, fname, sizeof(wc_fname), wc_fname)) {
         return false;
     }
 
@@ -141,12 +149,11 @@ static bool sm_getAssetsPath(size_t dstlen, char *dst) {
         return false;
     }
 
-#if SDL_PLATFORM_WIN32
+#ifdef SDL_PLATFORM_WIN32
     wchar_t wc_dst[SM_MAX_PATH] = { 0 };
     size_t wc_dstlen = sizeof(wc_dst);
     const char *append = "assets";
-    // we explicitly want sizeof rather than strlen
-    // NOLINTNEXTLINE(bugprone-sizeof-expression)
+    // NOLINTNEXTLINE: we don't want strlen instead of sizeof
     if(!sm_appendPath(&wc_dstlen, (void*)wc_dst, dstlen, dst, sizeof(append), append)) {
         return false;
     }
@@ -160,42 +167,78 @@ static struct sm_assets_state {
     const char *assets_path;
 } sm_assets_state;
 
-static bool sm_readFile(struct sm_assets_state *state, const char *fname) {
+static bool sm_readFile(const char *fname, size_t *readbytes, size_t dstlen, char *dst) {
     FILE *file = NULL;
     const errno_t errnum = fopen_s(&file, fname, "rb");
-    if (errnum != 0) {
+    if(errnum != 0) {
         char errmsg[SM_MAX_ERRMSG] = { 0 };
         assert(strerror_s(errmsg, sizeof(errmsg), errnum) != 0);
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to open file %s: %s", fname, errmsg);
         return false;
     }
-
-    char buf[SM_MAX_FILE] = { 0 };
 #ifdef SDL_PLATFORM_WIN32
     // use _fread_nolock because this call stack is single-threaded for now
-
-    // a widening conversion from a positive int to size_t won't matter here
-    // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
-    const size_t bytes_read = _fread_nolock_s(buf, sizeof(buf), sizeof(char), SM_MAX_FILE, file);
+    // NOLINTNEXTLINE: a widening conversion from a positive int to size_t won't matter here
+    *readbytes = _fread_nolock_s(dst, dstlen, sizeof(char), SM_MAX_FILE, file);
 #endif
-    if (ferror(file) != 0) {
+    if(ferror(file) != 0) {
         char errmsg[SM_MAX_ERRMSG] = { 0 };
         assert(strerror_s(errmsg, sizeof(errmsg), errno) != 0);
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to read file %s: %s", fname, errmsg);
-        return false;
+        goto err;
     }
-    if (bytes_read == 0) {
+    if(*readbytes == 0) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "File %s was empty", fname);
-        return false;
+        goto err;
     }
 
-    if (fclose(file) != 0) {
+    if(fclose(file) != 0) {
         char errmsg[SM_MAX_ERRMSG] = { 0 };
         assert(strerror_s(errmsg, sizeof(errmsg), errno) != 0);
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to close file %s: %s", fname, errmsg);
         return false;
     }
 
+    return true;
+err:
+    fclose(file);
+    return false;
+}
+
+static bool sm_readShader(sm_state *state, const char *fpath, size_t fname_len, const char *fname) {
+    // get the file stem
+    char fstem[SM_MAX_PATH*2] = { 0 };
+    if(!sm_getFileStem(fname_len, fname, sizeof(fstem), fstem)) {
+        return false;
+    }
+
+    // try to map the file stem to the LUT index
+    size_t index = 0;
+    if(strncmp("foo.vert", fstem, 8) == 0) {
+        index = SM_SHADER_FOO_VERT;
+    } else {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Found unexpected shader: %s", fname);
+        return false;
+    }
+
+    // read file bytes
+    size_t buf_len = 0;
+    char buf[SM_MAX_FILE] = { 0 };
+    if(!sm_readFile(fpath, &buf_len, sizeof(buf), buf)) {
+        return false;
+    }
+
+    // copy file bytes
+    // NOLINTNEXTLINE: a widening conversion from a positive int to size_t won't matter here
+    const errno_t errnum = memcpy_s(state->shaders_buf + state->shaders_len, SM_SIZEOF_SHADERS_BUF, buf, buf_len);
+    if(errnum != 0) {
+        char errmsg[SM_MAX_ERRMSG] = { 0 };
+        assert(strerror_s(errmsg, sizeof(errmsg), errnum) != 0);
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to copy shader buffer data from %s: %s (%s:%s)", fname, errmsg, __FILE_NAME__, __FUNCTION__);
+        return false;
+    }
+
+    state->shaders_len += buf_len;
     return true;
 }
 
@@ -204,7 +247,7 @@ static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata, const char
     // copy the assets_path to a new buffer
     char fpath[SM_MAX_PATH*2] = { 0 };
     errno_t errnum = strcpy_s(fpath, sizeof(fpath) / 2, state->assets_path);
-    if(strcpy_s(fpath, sizeof(fpath) / 2, state->assets_path) != 0) {
+    if(errnum != 0) {
         char errmsg[SM_MAX_ERRMSG] = { 0 };
         assert(strerror_s(errmsg, sizeof(errmsg), errnum) != 0);
 
@@ -234,38 +277,26 @@ static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata, const char
         return SDL_ENUM_FAILURE;
     }
 
-    // get the file stem
-    char fstem[SM_MAX_PATH*2] = { 0 };
-    if(!sm_getFileStem(fname_len, fname, sizeof(fstem), fstem)) {
-        return SDL_ENUM_FAILURE;
-    }
-
     // get the file extension
     char ext[SM_MAX_PATH*2] = { 0 };
-    if (!sm_getFileExt(wc_fpath_len, (void*)wc_fpath, sizeof(ext), ext)) {
-        return SDL_ENUM_FAILURE;
-    }
-
-    // try to map the file stem to the LUT index
-    size_t index = 0;
-    if (strncmp("foo.vert", fstem, 8) == 0) {
-        index = SM_SHADER_FOO_VERT;
-    } else {
-        // we're only handling shaders for now
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Found unexpected asset: %s", fname);
+    if(!sm_getFileExt(wc_fpath_len, (void*)wc_fpath, sizeof(ext), ext)) {
         return SDL_ENUM_FAILURE;
     }
 
     // check the file extension
-    if(strncmp(".json", ext, 5) == 0 ||
-        strncmp(".dxil", ext, 5) == 0 ||
-        strncmp(".spv", ext, 4) == 0
-    ) {
-        if (!sm_readFile(state, fpath)) {
-            return SDL_ENUM_FAILURE;
-        }
+    if(strncmp(".json", ext, 5) == 0) {
+        // do nothing
+    } else if(strncmp(".dxil", ext, 5) == 0) {
+        // do nothing
+    } else if(strncmp(".spv", ext, 4) == 0) {
+        // do nothing
     } else {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Found unexpected asset: %s", fname);
+        return SDL_ENUM_FAILURE;
+    }
+
+    if(!sm_readShader(state->appstate, fpath, fname_len, fname)) {
+        // TODO free buffers that were alloc'd
         return SDL_ENUM_FAILURE;
     }
 
@@ -274,7 +305,7 @@ static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata, const char
 }
 
 bool sm_initAssets(sm_state* state) {
-    // allocate 2 bytes for each allowed character in the path so we can safely store the
+    // allocate 2 bytes for each allowed char in the path so we can safely store the
     // wide string result in the narrow string
     char assets_path[SM_MAX_PATH*2] = { 0 };
     if(!sm_getAssetsPath(sizeof(assets_path), assets_path)) {
@@ -292,18 +323,19 @@ bool sm_initAssets(sm_state* state) {
     }
 
     // this is a good spot to initialize asset-related fields in the app state
-    state->shaders_buf = malloc(sizeof(char) * SM_MAX_SHADERS_BUF);
+    // NOLINTNEXTLINE: a widening conversion from a positive int to size_t won't matter here
+    state->shaders_buf = malloc(SM_SIZEOF_SHADERS_BUF);
     if(!state->shaders_buf) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Heap allocation failed (%s:%s)", __FILE_NAME__, __FUNCTION__);
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to allocate heap memory (%s:%s)", __FILE_NAME__, __FUNCTION__);
         return false;
     }
-    state->shader_lookup = malloc(sizeof(sm_shaderinfo) * SM_MAX_SHADERS);
-    if(!state->shader_lookup) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Heap allocation failed (%s:%s)", __FILE_NAME__, __FUNCTION__);
+    state->shaders_lookup = malloc(sizeof(sm_shaderinfo) * SM_MAX_SHADERS);
+    if(!state->shaders_lookup) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to allocate heap memory (%s:%s)", __FILE_NAME__, __FUNCTION__);
         goto err1;
     }
     state->shaders_len = 0;
-    state->shader_lut_len = 0;
+    state->shaders_lut_len = 0;
 
     // walk the dir
     struct sm_assets_state assets_state = {
@@ -315,15 +347,14 @@ bool sm_initAssets(sm_state* state) {
     }
 
     return true;
-
 err2:
-    free(state->shader_lookup);
+    free(state->shaders_lookup);
 err1:
     free(state->shaders_buf);
     return false;
 }
 
 void sm_deinitAssets(sm_state* state) {
-    free(state->shader_lookup);
+    free(state->shaders_lookup);
     free(state->shaders_buf);
 }
