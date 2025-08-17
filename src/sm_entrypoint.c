@@ -48,6 +48,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to allocate heap memory (%s:%s)", __FILE_NAME__, __FUNCTION__);
         goto err4;
     }
+    *state = (sm_state){ 0 };
 
     *appstate = state;
     state->device = device;
@@ -82,7 +83,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 }
 
 void SDL_AppQuit(void *appstate, SDL_AppResult result) {
-    sm_state *state = (sm_state*) appstate;
+    sm_state *state = (sm_state*)appstate;
     SDL_ReleaseWindowFromGPUDevice(state->device, state->window);
     SDL_DestroyWindow(state->window);
     SDL_DestroyGPUDevice(state->device);

@@ -252,7 +252,7 @@ static bool sm_readShader(sm_state *state, const char *fpath, size_t fname_len, 
             SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to allocate heap memory (%s:%s)", __FILE_NAME__, __FUNCTION__);
             return false;
         }
-
+        *shaderinfo = (sm_shaderinfo){ 0 };
         state->shaders_lookup[index] = shaderinfo;
         ++state->shaders_lut_len;
     } else {
@@ -367,18 +367,16 @@ bool sm_initAssets(sm_state* state) {
 
     // this is a good spot to initialize asset-related fields in the app state
     // NOLINTNEXTLINE: a widening conversion from a positive int to size_t won't matter here
-    state->shaders_buf = malloc(SM_SIZEOF_SHADERS_BUF);
+    state->shaders_buf = calloc(SM_MAX_SHADERS_BUF, sizeof(char));
     if(!state->shaders_buf) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to allocate heap memory (%s:%s)", __FILE_NAME__, __FUNCTION__);
         return false;
     }
-    state->shaders_lookup = (sm_shaderinfo**)malloc(sizeof(sm_shaderinfo*) * SM_MAX_SHADERS);
+    state->shaders_lookup = (sm_shaderinfo**)calloc(SM_MAX_SHADERS, sizeof(sm_shaderinfo*));
     if(!state->shaders_lookup) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to allocate heap memory (%s:%s)", __FILE_NAME__, __FUNCTION__);
         goto err1;
     }
-    state->shaders_len = 0;
-    state->shaders_lut_len = 0;
 
     // walk the dir
     struct sm_assets_state assets_state = {
