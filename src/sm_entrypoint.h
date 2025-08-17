@@ -12,12 +12,12 @@
 #include <SDL3/SDL_video.h>
 
 typedef struct sm_shaderinfo {
+    size_t json_offset;
+    size_t json_len;
     size_t dxil_offset;
     size_t dxil_len;
     size_t spv_offset;
     size_t spv_len;
-    size_t json_offset;
-    size_t json_len;
 } sm_shaderinfo;
 
 typedef struct sm_state {
@@ -26,6 +26,6 @@ typedef struct sm_state {
 
     char *shaders_buf;
     size_t shaders_len;
-    sm_shaderinfo *shaders_lookup;
+    sm_shaderinfo **shaders_lookup;
     size_t shaders_lut_len;
 } sm_state;

@@ -154,7 +154,7 @@ static bool sm_getAssetsPath(size_t dstlen, char *dst) {
     size_t wc_dstlen = sizeof(wc_dst);
     const char *append = "assets";
     // NOLINTNEXTLINE: we don't want strlen instead of sizeof
-    if(!sm_appendPath(&wc_dstlen, (void*)wc_dst, dstlen, dst, sizeof(append), append)) {
+    if(!sm_appendPath(&wc_dstlen, wc_dst, dstlen, dst, sizeof(append), append)) {
         return false;
     }
 
@@ -205,7 +205,13 @@ err:
     return false;
 }
 
-static bool sm_readShader(sm_state *state, const char *fpath, size_t fname_len, const char *fname) {
+static enum sm_shaderformat {
+    JSON,
+    DXIL,
+    SPV,
+} sm_shaderformat;
+
+static bool sm_readShader(sm_state *state, const char *fpath, size_t fname_len, const char *fname, enum sm_shaderformat format) {
     // get the file stem
     char fstem[SM_MAX_PATH*2] = { 0 };
     if(!sm_getFileStem(fname_len, fname, sizeof(fstem), fstem)) {
@@ -237,8 +243,38 @@ static bool sm_readShader(sm_state *state, const char *fpath, size_t fname_len, 
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to copy shader buffer data from %s: %s (%s:%s)", fname, errmsg, __FILE_NAME__, __FUNCTION__);
         return false;
     }
-
     state->shaders_len += buf_len;
+
+    sm_shaderinfo *shaderinfo = NULL;
+    if(state->shaders_lut_len <= index || !state->shaders_lookup[index]) {
+        shaderinfo = malloc(sizeof(sm_shaderinfo));
+        if(!shaderinfo) {
+            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to allocate heap memory (%s:%s)", __FILE_NAME__, __FUNCTION__);
+            return false;
+        }
+
+        state->shaders_lookup[index] = shaderinfo;
+        ++state->shaders_lut_len;
+    } else {
+        shaderinfo = state->shaders_lookup[index];
+        assert(shaderinfo);
+    }
+
+    switch(format) {
+        case JSON:
+            shaderinfo->json_offset = state->shaders_len;
+            shaderinfo->json_len = buf_len;
+            break;
+        case DXIL:
+            shaderinfo->dxil_offset = state->shaders_len;
+            shaderinfo->dxil_len = buf_len;
+            break;
+        case SPV:
+            shaderinfo->spv_offset = state->shaders_len;
+            shaderinfo->spv_len = buf_len;
+            break;
+    }
+
     return true;
 }
 
@@ -284,24 +320,31 @@ static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata, const char
     }
 
     // check the file extension
+    enum sm_shaderformat shaderformat = 0;
     if(strncmp(".json", ext, 5) == 0) {
-        // do nothing
+        shaderformat = JSON;
     } else if(strncmp(".dxil", ext, 5) == 0) {
-        // do nothing
+        shaderformat = DXIL;
     } else if(strncmp(".spv", ext, 4) == 0) {
-        // do nothing
+        shaderformat = SPV;
     } else {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Found unexpected asset: %s", fname);
         return SDL_ENUM_FAILURE;
     }
 
-    if(!sm_readShader(state->appstate, fpath, fname_len, fname)) {
-        // TODO free buffers that were alloc'd
+    if(!sm_readShader(state->appstate, fpath, fname_len, fname, shaderformat)) {
         return SDL_ENUM_FAILURE;
     }
 
 #endif
     return SDL_ENUM_CONTINUE;
+}
+
+static void sm_deinitShadersLut(sm_state* state) {
+    for(size_t i = 0; i < state->shaders_lut_len; ++i) {
+        free(state->shaders_lookup[i]);
+    }
+    free((void*)state->shaders_lookup);
 }
 
 bool sm_initAssets(sm_state* state) {
@@ -329,7 +372,7 @@ bool sm_initAssets(sm_state* state) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to allocate heap memory (%s:%s)", __FILE_NAME__, __FUNCTION__);
         return false;
     }
-    state->shaders_lookup = malloc(sizeof(sm_shaderinfo) * SM_MAX_SHADERS);
+    state->shaders_lookup = (sm_shaderinfo**)malloc(sizeof(sm_shaderinfo*) * SM_MAX_SHADERS);
     if(!state->shaders_lookup) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to allocate heap memory (%s:%s)", __FILE_NAME__, __FUNCTION__);
         goto err1;
@@ -348,13 +391,13 @@ bool sm_initAssets(sm_state* state) {
 
     return true;
 err2:
-    free(state->shaders_lookup);
+    sm_deinitShadersLut(state);
 err1:
     free(state->shaders_buf);
     return false;
 }
 
 void sm_deinitAssets(sm_state* state) {
-    free(state->shaders_lookup);
+    sm_deinitShadersLut(state);
     free(state->shaders_buf);
 }

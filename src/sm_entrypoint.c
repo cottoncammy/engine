@@ -49,7 +49,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
         goto err4;
     }
 
-    *appstate = (void*)state;
+    *appstate = state;
     state->device = device;
     state->window = window;
 
@@ -86,7 +86,6 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
     SDL_ReleaseWindowFromGPUDevice(state->device, state->window);
     SDL_DestroyWindow(state->window);
     SDL_DestroyGPUDevice(state->device);
-
     sm_deinitAssets(state);
     free(state);
     SDL_Quit();
