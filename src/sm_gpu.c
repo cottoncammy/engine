@@ -17,7 +17,7 @@ static SDL_GPUShaderStage sm_shader_stages[2] = {
 
 sm_static_assert(sizeof(char) == sizeof(uint8_t));
 
-static bool sm_copyShaderBytes(const char *src, size_t offset, size_t dstlen, uint8_t* dst) {
+static bool sm_copyShaderBytes(const char *const src, size_t offset, size_t dstlen, uint8_t *const dst) {
     const errno_t errnum = memcpy_s(dst, dstlen, src + offset, dstlen);
     if(errnum != 0) {
         char errmsg[SM_MAX_ERRMSG] = { 0 };
@@ -28,7 +28,7 @@ static bool sm_copyShaderBytes(const char *src, size_t offset, size_t dstlen, ui
     return true;
 }
 
-bool sm_createShader(const sm_state *state, sm_shader_idx idx, SDL_GPUShader **dst) {
+bool sm_createShader(const sm_state *const state, sm_shader_idx idx, SDL_GPUShader **dst) {
     assert(state->shaders_lut_len > idx);
     const sm_shaderinfo *info = state->shaders_lookup[idx];
     assert(info);

@@ -4,6 +4,6 @@
 
 #include "sm_entrypoint.h"
 
-bool sm_initAssets(sm_state* state);
+bool sm_initAssets(sm_state *const state);
 
-void sm_deinitAssets(sm_state* state);
+void sm_deinitAssets(sm_state *const state);

@@ -24,7 +24,7 @@
 #ifdef SDL_PLATFORM_WIN32
 sm_static_assert(sizeof(wchar_t) == sizeof(char) * 2);
 
-static bool sm_getWideStr(size_t nc_len, const char *nc, size_t dstlen, wchar_t *dst) {
+static bool sm_getWideStr(size_t nc_len, const char *const nc, size_t dstlen, wchar_t *const dst) {
     size_t converted = 0;
     const size_t actual_len = strnlen_s(nc, nc_len);
     assert(nc[actual_len] == '\0'); // make sure we found the actual length
@@ -46,7 +46,7 @@ static bool sm_getWideStr(size_t nc_len, const char *nc, size_t dstlen, wchar_t 
     return true;
 }
 
-static bool sm_getNarrowStr(size_t wc_len, const wchar_t *wc, size_t dstlen, char *dst) {
+static bool sm_getNarrowStr(size_t wc_len, const wchar_t *const wc, size_t dstlen, char *const dst) {
     size_t converted = 0;
     if(wcstombs_s(&converted, dst, dstlen, wc, dstlen-1) != 0) {
         char errmsg[SM_MAX_ERRMSG] = { 0 };
@@ -68,16 +68,16 @@ static bool sm_getNarrowStr(size_t wc_len, const wchar_t *wc, size_t dstlen, cha
     return true;
 }
 
-static bool sm_getWideStrPath(size_t nc_len, const char *nc, size_t dstlen, wchar_t *dst) {
-    bool result = sm_getWideStr(nc_len, nc, dstlen, dst);
+static bool sm_getWideStrPath(size_t nc_len, const char *const nc, size_t dstlen, wchar_t *const dst) {
+    const bool result = sm_getWideStr(nc_len, nc, dstlen, dst);
     const size_t actual_len = wcsnlen_s(dst, dstlen);
     assert(dst[actual_len] == '\0'); // make sure we found the actual length
     assert(actual_len > 0 && actual_len <= SM_MAX_PATH);
     return result;
 }
 
-static bool sm_getNarrowStrPath(size_t wc_len, const wchar_t *wc, size_t dstlen, char *dst) {
-    bool result = sm_getNarrowStr(wc_len, wc, dstlen, dst);
+static bool sm_getNarrowStrPath(size_t wc_len, const wchar_t *const wc, size_t dstlen, char *const dst) {
+    const bool result = sm_getNarrowStr(wc_len, wc, dstlen, dst);
     const size_t actual_len = strnlen_s(dst, dstlen);
     assert(dst[actual_len] == '\0'); // make sure we found the actual length
     assert(actual_len > 0 && actual_len <= SM_MAX_PATH);
@@ -85,7 +85,7 @@ static bool sm_getNarrowStrPath(size_t wc_len, const wchar_t *wc, size_t dstlen,
 }
 #endif
 
-static bool sm_appendPath(size_t *wc_dstlen, wchar_t *wc_dst, size_t nc_dstlen, char *nc_dst, size_t append_len, const char *append) {
+static bool sm_appendPath(size_t *const wc_dstlen, wchar_t *const wc_dst, size_t nc_dstlen, char *const nc_dst, size_t append_len, const char *const append) {
 #ifdef SDL_PLATFORM_WIN32
     if(!sm_getWideStrPath(nc_dstlen, nc_dst, *wc_dstlen, wc_dst)) {
         return false;
@@ -105,25 +105,25 @@ static bool sm_appendPath(size_t *wc_dstlen, wchar_t *wc_dst, size_t nc_dstlen, 
 #endif
 }
 
-static bool sm_getFileExt(size_t fpath_len, const void *fpath, size_t dstlen, char* dst) {
+static bool sm_getFileExt(size_t fpath_len, const void *const fpath, size_t dstlen, char *const dst) {
 #ifdef SDL_PLATFORM_WIN32
-    wchar_t *wc_fpath = (wchar_t*)fpath;
+    const wchar_t *wc_fpath = (wchar_t*)fpath;
     const size_t wc_len = wcsnlen_s(wc_fpath, fpath_len);
     assert(wc_fpath[wc_len] == '\0'); // make sure we found the actual length
     wchar_t wc_dst[SM_MAX_PATH] = { 0 };
-    const wchar_t **wc_dstptr = (const wchar_t**)&wc_dst;
+    const wchar_t *wc_dstptr = wc_dst;
 
-    const HRESULT hresult = PathCchFindExtension(wc_fpath, wc_len+1, wc_dstptr);
-    if(FAILED(hresult) || (wc_dstptr && (**wc_dstptr == '\0'))) {
+    const HRESULT hresult = PathCchFindExtension(wc_fpath, wc_len+1, &wc_dstptr);
+    if(FAILED(hresult) || (wc_dstptr && (*wc_dstptr == '\0'))) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to get file extension: error code %ld (%s:%s)", HRESULT_CODE(hresult), __FILE_NAME__, __FUNCTION__);
         return false;
     }
 
-    return sm_getNarrowStrPath(sizeof(*wc_dstptr), *wc_dstptr, dstlen, dst);
+    return sm_getNarrowStrPath(sizeof(wc_dstptr), wc_dstptr, dstlen, dst);
 #endif
 }
 
-static bool sm_getFileStem(size_t fname_len, const char *fname, size_t dstlen, char *dst) {
+static bool sm_getFileStem(size_t fname_len, const char *const fname, size_t dstlen, char *const dst) {
 #ifdef SDL_PLATFORM_WIN32
     wchar_t wc_fname[SM_MAX_PATH] = { 0 };
     if(!sm_getWideStrPath(fname_len, fname, sizeof(wc_fname), wc_fname)) {
@@ -140,7 +140,7 @@ static bool sm_getFileStem(size_t fname_len, const char *fname, size_t dstlen, c
 #endif
 }
 
-static bool sm_getAssetsPath(size_t dstlen, char *dst) {
+static bool sm_getAssetsPath(size_t dstlen, char *const dst) {
     const char *bin = SDL_GetBasePath();
     const errno_t errnum = strcpy_s(dst, dstlen / 2, bin);
     if(errnum != 0) {
@@ -165,11 +165,11 @@ static bool sm_getAssetsPath(size_t dstlen, char *dst) {
 }
 
 static struct sm_assets_state {
-    sm_state *appstate;
-    const char *assets_path;
+    sm_state *const appstate;
+    const char *const assets_path;
 } sm_assets_state;
 
-static bool sm_readFile(const char *fname, size_t *readbytes, size_t dstlen, char *dst) {
+static bool sm_readFile(const char *const fname, size_t *const readbytes, size_t dstlen, char *dst) {
     FILE *file = NULL;
     const errno_t errnum = fopen_s(&file, fname, "rb");
     if(errnum != 0) {
@@ -214,7 +214,7 @@ static enum sm_shaderformat {
     SPV,
 } sm_shaderformat;
 
-static bool sm_readShader(sm_state *state, const char *fpath, size_t fname_len, const char *fname, enum sm_shaderformat format) {
+static bool sm_readShader(sm_state *const state, const char *const fpath, size_t fname_len, const char *const fname, enum sm_shaderformat format) {
     // get the file stem
     char fstem[SM_MAX_PATH*2] = { 0 };
     if(!sm_getFileStem(fname_len, fname, sizeof(fstem), fstem)) {
@@ -282,7 +282,7 @@ static bool sm_readShader(sm_state *state, const char *fpath, size_t fname_len, 
     return true;
 }
 
-static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata, const char *dirname, const char *fname) {
+static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata, const char *const dirname, const char *const fname) {
     struct sm_assets_state *state = (struct sm_assets_state*)userdata;
     // copy the assets_path to a new buffer
     char fpath[SM_MAX_PATH*2] = { 0 };
@@ -344,14 +344,14 @@ static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata, const char
     return SDL_ENUM_CONTINUE;
 }
 
-static void sm_deinitShadersState(sm_state* state) {
+static void sm_deinitShadersState(sm_state *const state) {
     for(size_t i = 0; i < state->shaders_lut_len; ++i) {
         free(state->shaders_lookup[i]);
     }
     free((void*)state->shaders_lookup);
 }
 
-bool sm_initAssets(sm_state* state) {
+bool sm_initAssets(sm_state *const state) {
     // allocate 2 bytes for each allowed char in the path so we can safely store the
     // wide string result in the narrow string
     char assets_path[SM_MAX_PATH*2] = { 0 };
@@ -399,7 +399,7 @@ err1:
     return false;
 }
 
-void sm_deinitAssets(sm_state* state) {
+void sm_deinitAssets(sm_state *const state) {
     sm_deinitShadersState(state);
     free(state->shaders_buf);
 }

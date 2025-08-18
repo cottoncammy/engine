@@ -6,4 +6,4 @@
 
 #include "sm_entrypoint.h"
 
-bool sm_createShader(const sm_state* state, sm_shader_idx idx, SDL_GPUShader **dst);
+bool sm_createShader(const sm_state *const state, sm_shader_idx idx, SDL_GPUShader **dst);
