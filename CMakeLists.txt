@@ -87,11 +87,14 @@ target_sources(submachine
             src
         FILES
             "${CMAKE_CURRENT_BINARY_DIR}/sm_build_config.h"
+            src/sm_assert.h
             src/sm_assets.h
             src/sm_entrypoint.h
+            src/sm_gpu.h
     PRIVATE
         src/sm_assets.c
         src/sm_entrypoint.c
+        src/sm_gpu.c
 )
 
 target_link_libraries(submachine PRIVATE

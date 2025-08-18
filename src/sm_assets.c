@@ -16,12 +16,14 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#define __STDC_WANT_LIB_EXT1__ 1
 #include <string.h>
 
+#include "sm_assert.h"
 #include "sm_assets.h"
 
 #ifdef SDL_PLATFORM_WIN32
+sm_static_assert(sizeof(wchar_t) == sizeof(char) * 2);
+
 static bool sm_getWideStr(size_t nc_len, const char *nc, size_t dstlen, wchar_t *dst) {
     size_t converted = 0;
     const size_t actual_len = strnlen_s(nc, nc_len);
@@ -176,6 +178,7 @@ static bool sm_readFile(const char *fname, size_t *readbytes, size_t dstlen, cha
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to open file %s: %s", fname, errmsg);
         return false;
     }
+    assert(file);
 #ifdef SDL_PLATFORM_WIN32
     // use _fread_nolock because this call stack is single-threaded for now
     // NOLINTNEXTLINE: a widening conversion from a positive int to size_t won't matter here
@@ -221,7 +224,7 @@ static bool sm_readShader(sm_state *state, const char *fpath, size_t fname_len, 
     // try to map the file stem to the LUT index
     size_t index = 0;
     if(strncmp("foo.vert", fstem, 8) == 0) {
-        index = SM_SHADER_FOO_VERT;
+        index = FOO_VERT & 0x1;
     } else {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Found unexpected shader: %s", fname);
         return false;
@@ -236,7 +239,7 @@ static bool sm_readShader(sm_state *state, const char *fpath, size_t fname_len, 
 
     // copy file bytes
     // NOLINTNEXTLINE: a widening conversion from a positive int to size_t won't matter here
-    const errno_t errnum = memcpy_s(state->shaders_buf + state->shaders_len, SM_SIZEOF_SHADERS_BUF, buf, buf_len);
+    const errno_t errnum = memcpy_s(state->shaders_buf + state->shaders_len, sizeof(char) * SM_MAX_SHADERS_BUF, buf, buf_len);
     if(errnum != 0) {
         char errmsg[SM_MAX_ERRMSG] = { 0 };
         assert(strerror_s(errmsg, sizeof(errmsg), errnum) != 0);
@@ -245,6 +248,7 @@ static bool sm_readShader(sm_state *state, const char *fpath, size_t fname_len, 
     }
     state->shaders_len += buf_len;
 
+    // store shader info
     sm_shaderinfo *shaderinfo = NULL;
     if(state->shaders_lut_len <= index || !state->shaders_lookup[index]) {
         shaderinfo = malloc(sizeof(sm_shaderinfo));
@@ -257,9 +261,9 @@ static bool sm_readShader(sm_state *state, const char *fpath, size_t fname_len, 
         ++state->shaders_lut_len;
     } else {
         shaderinfo = state->shaders_lookup[index];
-        assert(shaderinfo);
     }
 
+    assert(shaderinfo);
     switch(format) {
         case JSON:
             shaderinfo->json_offset = state->shaders_len;
@@ -340,7 +344,7 @@ static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata, const char
     return SDL_ENUM_CONTINUE;
 }
 
-static void sm_deinitShadersLut(sm_state* state) {
+static void sm_deinitShadersState(sm_state* state) {
     for(size_t i = 0; i < state->shaders_lut_len; ++i) {
         free(state->shaders_lookup[i]);
     }
@@ -389,13 +393,13 @@ bool sm_initAssets(sm_state* state) {
 
     return true;
 err2:
-    sm_deinitShadersLut(state);
+    sm_deinitShadersState(state);
 err1:
     free(state->shaders_buf);
     return false;
 }
 
 void sm_deinitAssets(sm_state* state) {
-    sm_deinitShadersLut(state);
+    sm_deinitShadersState(state);
     free(state->shaders_buf);
 }

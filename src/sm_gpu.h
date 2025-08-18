@@ -1,0 +1,9 @@
+#pragma once
+
+#include <SDL3/SDL_gpu.h>
+
+#include <stdbool.h>
+
+#include "sm_entrypoint.h"
+
+bool sm_createShader(const sm_state* state, sm_shader_idx idx, SDL_GPUShader **dst);
