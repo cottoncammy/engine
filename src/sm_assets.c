@@ -22,7 +22,7 @@
 #include "sm_assets.h"
 
 #ifdef SDL_PLATFORM_WIN32
-sm_static_assert(sizeof(wchar_t) == sizeof(char) * 2);
+sm_static_assert(sizeof(wchar_t) == sizeof(char)*2);
 
 static bool sm_getWideStr(size_t nc_len, const char *const nc, size_t dstlen, wchar_t *const dst) {
     size_t converted = 0;
@@ -107,7 +107,7 @@ static bool sm_appendPath(size_t *const wc_dstlen, wchar_t *const wc_dst, size_t
 
 static bool sm_getFileExt(size_t fpath_len, const void *const fpath, size_t dstlen, char *const dst) {
 #ifdef SDL_PLATFORM_WIN32
-    const wchar_t *wc_fpath = (wchar_t*)fpath;
+    const wchar_t *const wc_fpath = (wchar_t *const)fpath;
     const size_t wc_len = wcsnlen_s(wc_fpath, fpath_len);
     assert(wc_fpath[wc_len] == '\0'); // make sure we found the actual length
     wchar_t wc_dst[SM_MAX_PATH] = { 0 };
@@ -141,7 +141,7 @@ static bool sm_getFileStem(size_t fname_len, const char *const fname, size_t dst
 }
 
 static bool sm_getAssetsPath(size_t dstlen, char *const dst) {
-    const char *bin = SDL_GetBasePath();
+    const char *const bin = SDL_GetBasePath();
     const errno_t errnum = strcpy_s(dst, dstlen / 2, bin);
     if(errnum != 0) {
         char errmsg[SM_MAX_ERRMSG] = { 0 };
@@ -154,7 +154,7 @@ static bool sm_getAssetsPath(size_t dstlen, char *const dst) {
 #ifdef SDL_PLATFORM_WIN32
     wchar_t wc_dst[SM_MAX_PATH] = { 0 };
     size_t wc_dstlen = sizeof(wc_dst);
-    const char *append = "assets";
+    const char *const append = "assets";
     // NOLINTNEXTLINE: we don't want strlen instead of sizeof
     if(!sm_appendPath(&wc_dstlen, wc_dst, dstlen, dst, sizeof(append), append)) {
         return false;
@@ -222,9 +222,11 @@ static bool sm_readShader(sm_state *const state, const char *const fpath, size_t
     }
 
     // try to map the file stem to the LUT index
-    size_t index = 0;
-    if(strncmp("foo.vert", fstem, 8) == 0) {
-        index = FOO_VERT & 0x1;
+    sm_shader_idx idx = 0;
+    if(strncmp("triangle.vert", fstem, 13) == 0) {
+        idx = TRIANGLE_VERT >> 1;
+    } else if(strncmp("color.frag", fstem, 10) == 0) {
+        idx = COLOR_FRAG >> 1;
     } else {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Found unexpected shader: %s", fname);
         return false;
@@ -250,31 +252,31 @@ static bool sm_readShader(sm_state *const state, const char *const fpath, size_t
 
     // store shader info
     sm_shaderinfo *shaderinfo = NULL;
-    if(state->shaders_lut_len <= index || !state->shaders_lookup[index]) {
+    if(state->shaders_lut_len <= idx || !state->shaders_lookup[idx]) {
         shaderinfo = malloc(sizeof(sm_shaderinfo));
         if(!shaderinfo) {
             SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to allocate heap memory (%s:%s)", __FILE_NAME__, __FUNCTION__);
             return false;
         }
         *shaderinfo = (sm_shaderinfo){ 0 };
-        state->shaders_lookup[index] = shaderinfo;
+        state->shaders_lookup[idx] = shaderinfo;
         ++state->shaders_lut_len;
     } else {
-        shaderinfo = state->shaders_lookup[index];
+        shaderinfo = state->shaders_lookup[idx];
     }
 
     assert(shaderinfo);
     switch(format) {
         case JSON:
-            shaderinfo->json_offset = state->shaders_len;
+            shaderinfo->json_offset = state->shaders_len - buf_len;
             shaderinfo->json_len = buf_len;
             break;
         case DXIL:
-            shaderinfo->dxil_offset = state->shaders_len;
+            shaderinfo->dxil_offset = state->shaders_len - buf_len;
             shaderinfo->dxil_len = buf_len;
             break;
         case SPV:
-            shaderinfo->spv_offset = state->shaders_len;
+            shaderinfo->spv_offset = state->shaders_len - buf_len;
             shaderinfo->spv_len = buf_len;
             break;
     }
@@ -283,10 +285,10 @@ static bool sm_readShader(sm_state *const state, const char *const fpath, size_t
 }
 
 static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata, const char *const dirname, const char *const fname) {
-    struct sm_assets_state *state = (struct sm_assets_state*)userdata;
+    const struct sm_assets_state *const state = (struct sm_assets_state *const)userdata;
     // copy the assets_path to a new buffer
     char fpath[SM_MAX_PATH*2] = { 0 };
-    errno_t errnum = strcpy_s(fpath, sizeof(fpath) / 2, state->assets_path);
+    const errno_t errnum = strcpy_s(fpath, sizeof(fpath) / 2, state->assets_path);
     if(errnum != 0) {
         char errmsg[SM_MAX_ERRMSG] = { 0 };
         assert(strerror_s(errmsg, sizeof(errmsg), errnum) != 0);
@@ -324,7 +326,7 @@ static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata, const char
     }
 
     // check the file extension
-    enum sm_shaderformat shaderformat = 0;
+    enum sm_shaderformat shaderformat = -1;
     if(strncmp(".json", ext, 5) == 0) {
         shaderformat = JSON;
     } else if(strncmp(".dxil", ext, 5) == 0) {

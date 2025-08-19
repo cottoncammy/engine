@@ -10,6 +10,46 @@
 
 #include "sm_assets.h"
 #include "sm_entrypoint.h"
+#include "sm_gpu.h"
+
+static bool sm_initGpuPipelines(sm_state *state) {
+    SDL_GPUShader *vert_shader = NULL;
+    if(!sm_createShader(state, TRIANGLE_VERT, &vert_shader)) {
+        return false;
+    }
+    SDL_GPUShader *frag_shader = NULL;
+    if(!sm_createShader(state, COLOR_FRAG, &frag_shader)) {
+        goto err1;
+    }
+
+    if(!sm_createGraphicsPipeline(state, vert_shader, frag_shader, SDL_GPU_FILLMODE_FILL, &state->fill_pipeline)) {
+        goto err2;
+    }
+#ifndef NDEBUG
+    if(!sm_createGraphicsPipeline(state, vert_shader, frag_shader, SDL_GPU_FILLMODE_LINE, &state->line_pipeline)) {
+        goto err3;
+    }
+#endif
+
+    SDL_ReleaseGPUShader(state->device, vert_shader);
+    SDL_ReleaseGPUShader(state->device, frag_shader);
+
+    return true;
+err3:
+    SDL_ReleaseGPUGraphicsPipeline(state->device, state->fill_pipeline);
+err2:
+    SDL_ReleaseGPUShader(state->device, frag_shader);
+err1:
+    SDL_ReleaseGPUShader(state->device, vert_shader);
+    return false;
+}
+
+static void sm_deinitGpuPipelines(sm_state *state) {
+    SDL_ReleaseGPUGraphicsPipeline(state->device, state->fill_pipeline);
+#ifndef NDEBUG
+    SDL_ReleaseGPUGraphicsPipeline(state->device, state->line_pipeline);
+#endif
+}
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     if(!SDL_SetAppMetadata(SM_INFO_STRING, SM_VERSION_STRING, "dev.cottoncammy.submachine")) {
@@ -53,12 +93,17 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     *appstate = state;
     state->device = device;
     state->window = window;
-    if (!sm_initAssets(state)) {
+    if(!sm_initAssets(state)) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to initialize assets");
         goto err4;
     }
+    if(!sm_initGpuPipelines(state)) {
+        goto err5;
+    }
 
     return SDL_APP_CONTINUE;
+err5:
+    sm_deinitAssets(state);
 err4:
     SDL_ReleaseWindowFromGPUDevice(device, window);
 err3:
@@ -83,11 +128,11 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 
 void SDL_AppQuit(void *appstate, SDL_AppResult result) {
     sm_state *state = (sm_state*)appstate;
+    sm_deinitGpuPipelines(state);
+    sm_deinitAssets(state);
     SDL_ReleaseWindowFromGPUDevice(state->device, state->window);
     SDL_DestroyWindow(state->window);
     SDL_DestroyGPUDevice(state->device);
-
-    sm_deinitAssets(state);
     free(state);
     SDL_Quit();
 }

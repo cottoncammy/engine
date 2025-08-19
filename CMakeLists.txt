@@ -108,7 +108,8 @@ endif()
 
 # compile shaders
 set(SHADERCROSS_INPUT_FILES
-    assets/shaders/foo.vert.hlsl
+    assets/shaders/color.frag.hlsl
+    assets/shaders/triangle.vert.hlsl
 )
 list(TRANSFORM SHADERCROSS_INPUT_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
 set(SHADERS_INSTALL_PATH "${CMAKE_CURRENT_BINARY_DIR}/assets")
