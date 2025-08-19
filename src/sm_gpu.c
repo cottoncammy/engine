@@ -47,7 +47,7 @@ bool sm_createShader(const sm_state *const state, sm_shader_idx idx, SDL_GPUShad
     } else {
         __builtin_unreachable();
     }
-    assert(code_offset < state->shaders_len);
+    assert(state->shaders_len > code_offset);
 
     uint8_t *code = calloc(code_size, sizeof(uint8_t));
     if(!code) {
@@ -56,7 +56,7 @@ bool sm_createShader(const sm_state *const state, sm_shader_idx idx, SDL_GPUShad
     }
 
     if(!sm_copyShaderBytes(state->shaders_buf, code_offset, code_size, code)) {
-        return false;
+        goto err;
     }
     const SDL_GPUShaderCreateInfo createinfo = {
         .code_size = code_size,
@@ -72,11 +72,15 @@ bool sm_createShader(const sm_state *const state, sm_shader_idx idx, SDL_GPUShad
     SDL_GPUShader *shader = SDL_CreateGPUShader(state->device, &createinfo);
     if(!shader) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create SDL GPU shader %d: %s", idx, SDL_GetError());
-        return false;
+        goto err;
     }
 
+    free(code);
     *dst = shader;
     return true;
+err:
+    free(code);
+    return false;
 }
 
 bool sm_createGraphicsPipeline(const sm_state *const state, SDL_GPUShader *const vert_shader, SDL_GPUShader *const frag_shader, SDL_GPUFillMode fill_mode, SDL_GPUGraphicsPipeline **dst) {
