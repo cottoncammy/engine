@@ -311,7 +311,7 @@ static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata, const char
     // ensure the item is a file
     SDL_PathInfo info = { 0 };
     if(!SDL_GetPathInfo(fpath, &info)) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to get SDL path info for %s: %s (%s:%s)", fpath, SDL_GetError(), __FILE_NAME__, __FUNCTION__);
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to get path info for %s: %s (%s:%s)", fpath, SDL_GetError(), __FILE_NAME__, __FUNCTION__);
         return SDL_ENUM_FAILURE;
     }
     if(info.type != SDL_PATHTYPE_FILE) {
@@ -363,7 +363,7 @@ bool sm_initAssets(sm_state *const state) {
     // ensure the asset path points to a dir
     SDL_PathInfo info = { 0 };
     if(!SDL_GetPathInfo(assets_path, &info)) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to get SDL path info for %s: %s (%s:%s)", assets_path, SDL_GetError(), __FILE_NAME__, __FUNCTION__);
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to get path info for %s: %s (%s:%s)", assets_path, SDL_GetError(), __FILE_NAME__, __FUNCTION__);
         return false;
     }
     if(info.type != SDL_PATHTYPE_DIRECTORY) {
