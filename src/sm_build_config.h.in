@@ -1,29 +1,29 @@
 #ifndef SM_BUILD_CONFIG_H_
-# define SM_BUILD_CONFIG_H_
-# if !defined _MSC_VER || _MSC_VER < 1930
-#  error Unsupported compiler
-# endif
-# if !defined __clang__ || __clang_major__ < 19
-#  error Unsupported compiler
-# ifndef __STDC_LIB_EXT1__
-#  error Unsupported compiler
-# endif
-# endif
+#define SM_BUILD_CONFIG_H_
+#if !defined _MSC_VER || _MSC_VER < 1930
+#	error Unsupported compiler
+#endif
+#if !defined __clang__ || __clang_major__ < 19
+#	error Unsupported compiler
+#	ifndef __STDC_LIB_EXT1__
+#		error Unsupported compiler
+#	endif
+#endif
 
-# include <SDL3/SDL_platform_defines.h>
-# ifndef SDL_PLATFORM_WIN32
-#  error Unsupported platform
-# endif
+#include <SDL3/SDL_platform_defines.h>
+#ifndef SDL_PLATFORM_WIN32
+#	error Unsupported platform
+#endif
 
-# ifndef __STDC_VERSION__
-#  error Can't determine C standard
-# elif __STDC_VERSION__ != 201112L
-#  error Unsupported C standard
-# endif
+#ifndef __STDC_VERSION__
+#	error Can't determine C standard
+#elif __STDC_VERSION__ != 201112L
+#	error Unsupported C standard
+#endif
 
 #define __STDC_WANT_LIB_EXT1__ 1
 
-# define SM_INFO_STRING "Submachine Engine"
-# define SM_VERSION_STRING "@CMAKE_PROJECT_VERSION@"
+#define SM_INFO_STRING "Submachine Engine"
+#define SM_VERSION_STRING "@CMAKE_PROJECT_VERSION@"
 
 #endif

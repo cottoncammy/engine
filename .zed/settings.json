@@ -7,12 +7,21 @@
     "Plain Text": [
       ".git*",
       "*.cmake",
-      "*.in",
+      "*.cmake.in",
       "*.bat"
     ],
     "YAML": [
       ".clangd",
       ".clang-format"
+    ],
+    "C": [
+      "*.h.in"
     ]
+  },
+  "languages": {
+    "C": {
+      "formatter": "language_server",
+      "format_on_save": "on"
+    }
   }
 }
