@@ -1,9 +1,11 @@
 #pragma once
 
-#include "sm_assert.h"
 #include <SDL3/SDL_gpu.h>
 #include <SDL3/SDL_video.h>
+
 #include <stdint.h>
+
+#include "sm_assert.h"
 
 #define SM_MAX_ERRMSG 256
 #define SM_MAX_FILE (100 * 1024)

@@ -25,18 +25,18 @@
 sm_static_assert(sizeof(wchar_t) == sizeof(char) * 2);
 
 static bool sm_getWideStr(size_t nc_len, const char *const nc, size_t dstlen,
-                          wchar_t *const dst) {
+						  wchar_t *const dst) {
 	size_t converted = 0;
 	const size_t actual_len = strnlen_s(nc, nc_len);
-	assert(nc[actual_len] == '\0');  // make sure we found the actual length
+	assert(nc[actual_len] == '\0');	 // make sure we found the actual length
 	if(mbstowcs_s(&converted, dst, dstlen / sizeof(wchar_t), nc, actual_len) != 0) {
 		char errmsg[SM_MAX_ERRMSG] = {0};
 		assert(_strerror_s(errmsg, sizeof(errmsg), NULL) != 0);
 
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR,
-		             "Failed to convert narrow character string %s to wide character "
-		             "string: %s (%s:%s)",
-		             nc, errmsg, __FILE_NAME__, __FUNCTION__);
+					 "Failed to convert narrow character string %s to wide character "
+					 "string: %s (%s:%s)",
+					 nc, errmsg, __FILE_NAME__, __FUNCTION__);
 		return false;
 	}
 
@@ -44,9 +44,9 @@ static bool sm_getWideStr(size_t nc_len, const char *const nc, size_t dstlen,
 	// terminator
 	if(converted != actual_len + 1) {
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR,
-		             "Failed to convert narrow character string %s to wide character "
-		             "string (%s:%s)",
-		             nc, __FILE_NAME__, __FUNCTION__);
+					 "Failed to convert narrow character string %s to wide character "
+					 "string (%s:%s)",
+					 nc, __FILE_NAME__, __FUNCTION__);
 		return false;
 	}
 
@@ -55,28 +55,28 @@ static bool sm_getWideStr(size_t nc_len, const char *const nc, size_t dstlen,
 }
 
 static bool sm_getNarrowStr(size_t wc_len, const wchar_t *const wc, size_t dstlen,
-                            char *const dst) {
+							char *const dst) {
 	size_t converted = 0;
 	if(wcstombs_s(&converted, dst, dstlen, wc, dstlen - 1) != 0) {
 		char errmsg[SM_MAX_ERRMSG] = {0};
 		assert(_strerror_s(errmsg, sizeof(errmsg), NULL) != 0);
 
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR,
-		             "Failed to convert wide character string to narrow character string "
-		             "%s: %s (%s:%s)",
-		             dst, errmsg, __FILE_NAME__, __FUNCTION__);
+					 "Failed to convert wide character string to narrow character string "
+					 "%s: %s (%s:%s)",
+					 dst, errmsg, __FILE_NAME__, __FUNCTION__);
 		return false;
 	}
 
 	// make sure we converted the number of chars in the wide string plus a null
 	// terminator
 	const size_t actual_len = wcsnlen_s(wc, wc_len);
-	assert(wc[actual_len] == '\0');  // make sure we found the actual length
+	assert(wc[actual_len] == '\0');	 // make sure we found the actual length
 	if(converted != actual_len + 1) {
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR,
-		             "Failed to convert wide character string to narrow character string "
-		             "%s (%s:%s)",
-		             dst, __FILE_NAME__, __FUNCTION__);
+					 "Failed to convert wide character string to narrow character string "
+					 "%s (%s:%s)",
+					 dst, __FILE_NAME__, __FUNCTION__);
 		return false;
 	}
 
@@ -85,7 +85,7 @@ static bool sm_getNarrowStr(size_t wc_len, const wchar_t *const wc, size_t dstle
 }
 
 static bool sm_getWideStrPath(size_t nc_len, const char *const nc, size_t dstlen,
-                              wchar_t *const dst) {
+							  wchar_t *const dst) {
 	const bool result = sm_getWideStr(nc_len, nc, dstlen, dst);
 	const size_t actual_len = wcsnlen_s(dst, dstlen);
 	assert(dst[actual_len] == '\0');  // make sure we found the actual length
@@ -94,7 +94,7 @@ static bool sm_getWideStrPath(size_t nc_len, const char *const nc, size_t dstlen
 }
 
 static bool sm_getNarrowStrPath(size_t wc_len, const wchar_t *const wc, size_t dstlen,
-                                char *const dst) {
+								char *const dst) {
 	const bool result = sm_getNarrowStr(wc_len, wc, dstlen, dst);
 	const size_t actual_len = strnlen_s(dst, dstlen);
 	assert(dst[actual_len] == '\0');  // make sure we found the actual length
@@ -104,8 +104,8 @@ static bool sm_getNarrowStrPath(size_t wc_len, const wchar_t *const wc, size_t d
 #endif
 
 static bool sm_appendPath(size_t *const wc_dstlen, wchar_t *const wc_dst,
-                          size_t nc_dstlen, char *const nc_dst, size_t append_len,
-                          const char *const append) {
+						  size_t nc_dstlen, char *const nc_dst, size_t append_len,
+						  const char *const append) {
 #ifdef SDL_PLATFORM_WIN32
 	if(!sm_getWideStrPath(nc_dstlen, nc_dst, *wc_dstlen, wc_dst)) {
 		return false;
@@ -120,8 +120,8 @@ static bool sm_appendPath(size_t *const wc_dstlen, wchar_t *const wc_dst,
 		PathCchAppend(wc_dst, *wc_dstlen / sizeof(wchar_t), wc_append);
 	if(FAILED(hresult)) {
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR,
-		             "Failed to append path %s to %s: error code %ld (%s:%s)", append,
-		             nc_dst, HRESULT_CODE(hresult), __FILE_NAME__, __FUNCTION__);
+					 "Failed to append path %s to %s: error code %ld (%s:%s)", append,
+					 nc_dst, HRESULT_CODE(hresult), __FILE_NAME__, __FUNCTION__);
 		return false;
 	}
 	return sm_getNarrowStrPath(*wc_dstlen, wc_dst, nc_dstlen, nc_dst);
@@ -129,7 +129,7 @@ static bool sm_appendPath(size_t *const wc_dstlen, wchar_t *const wc_dst,
 }
 
 static bool sm_getFileExt(size_t fpath_len, const void *const fpath, size_t dstlen,
-                          char *const dst) {
+						  char *const dst) {
 #ifdef SDL_PLATFORM_WIN32
 	const wchar_t *const wc_fpath = (wchar_t *const)fpath;
 	const size_t wc_len = wcsnlen_s(wc_fpath, fpath_len);
@@ -140,8 +140,8 @@ static bool sm_getFileExt(size_t fpath_len, const void *const fpath, size_t dstl
 	const HRESULT hresult = PathCchFindExtension(wc_fpath, wc_len + 1, &wc_dstptr);
 	if(FAILED(hresult) || (wc_dstptr && (*wc_dstptr == '\0'))) {
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR,
-		             "Failed to get file extension: error code %ld (%s:%s)",
-		             HRESULT_CODE(hresult), __FILE_NAME__, __FUNCTION__);
+					 "Failed to get file extension: error code %ld (%s:%s)",
+					 HRESULT_CODE(hresult), __FILE_NAME__, __FUNCTION__);
 		return false;
 	}
 
@@ -150,7 +150,7 @@ static bool sm_getFileExt(size_t fpath_len, const void *const fpath, size_t dstl
 }
 
 static bool sm_getFileStem(size_t fname_len, const char *const fname, size_t dstlen,
-                           char *const dst) {
+						   char *const dst) {
 #ifdef SDL_PLATFORM_WIN32
 	wchar_t wc_fname[SM_MAX_PATH] = {0};
 	if(!sm_getWideStrPath(fname_len, fname, sizeof(wc_fname), wc_fname)) {
@@ -161,8 +161,8 @@ static bool sm_getFileStem(size_t fname_len, const char *const fname, size_t dst
 		PathCchRemoveExtension(wc_fname, sizeof(wc_fname) / sizeof(wchar_t));
 	if(FAILED(hresult)) {
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR,
-		             "Failed to get file stem from %s: error code %ld (%s:%s)", fname,
-		             HRESULT_CODE(hresult), __FILE_NAME__, __FUNCTION__);
+					 "Failed to get file stem from %s: error code %ld (%s:%s)", fname,
+					 HRESULT_CODE(hresult), __FILE_NAME__, __FUNCTION__);
 		return false;
 	}
 
@@ -178,7 +178,7 @@ static bool sm_getAssetsPath(size_t dstlen, char *const dst) {
 		assert(strerror_s(errmsg, sizeof(errmsg), errnum) != 0);
 
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to copy string %s to %s: %s (%s:%s)",
-		             bin, dst, errmsg, __FILE_NAME__, __FUNCTION__);
+					 bin, dst, errmsg, __FILE_NAME__, __FUNCTION__);
 		return false;
 	}
 
@@ -201,7 +201,7 @@ static struct sm_assets_state {
 } sm_assets_state;
 
 static bool sm_readFile(const char *const fname, size_t *const readbytes, size_t dstlen,
-                        char *dst) {
+						char *dst) {
 	FILE *file = NULL;
 	const errno_t errnum = fopen_s(&file, fname, "rb");
 	if(errnum != 0) {
@@ -231,7 +231,7 @@ static bool sm_readFile(const char *const fname, size_t *const readbytes, size_t
 		char errmsg[SM_MAX_ERRMSG] = {0};
 		assert(strerror_s(errmsg, sizeof(errmsg), errno) != 0);
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to close file %s: %s", fname,
-		             errmsg);
+					 errmsg);
 		return false;
 	}
 
@@ -248,8 +248,8 @@ static enum sm_shaderformat {
 } sm_shaderformat;
 
 static bool sm_readShader(sm_state *const state, const char *const fpath,
-                          size_t fname_len, const char *const fname,
-                          enum sm_shaderformat format) {
+						  size_t fname_len, const char *const fname,
+						  enum sm_shaderformat format) {
 	// get the file stem
 	char fstem[SM_MAX_PATH * 2] = {0};
 	if(!sm_getFileStem(fname_len, fname, sizeof(fstem), fstem)) {
@@ -277,14 +277,14 @@ static bool sm_readShader(sm_state *const state, const char *const fpath,
 	// copy file bytes
 	// NOLINTBEGIN: widening conversion from positive int to size_t doesn't matter
 	const errno_t errnum = memcpy_s(state->shaders_buf + state->shaders_len,
-	                                sizeof(char) * SM_MAX_SHADERS_BUF, buf, buf_len);
+									sizeof(char) * SM_MAX_SHADERS_BUF, buf, buf_len);
 	// NOLINTEND
 	if(errnum != 0) {
 		char errmsg[SM_MAX_ERRMSG] = {0};
 		assert(strerror_s(errmsg, sizeof(errmsg), errnum) != 0);
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR,
-		             "Failed to copy shader buffer data from %s: %s (%s:%s)", fname,
-		             errmsg, __FILE_NAME__, __FUNCTION__);
+					 "Failed to copy shader buffer data from %s: %s (%s:%s)", fname,
+					 errmsg, __FILE_NAME__, __FUNCTION__);
 		return false;
 	}
 	state->shaders_len += buf_len;
@@ -295,7 +295,7 @@ static bool sm_readShader(sm_state *const state, const char *const fpath,
 		shaderinfo = malloc(sizeof(sm_shaderinfo));
 		if(!shaderinfo) {
 			SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to allocate heap memory (%s:%s)",
-			             __FILE_NAME__, __FUNCTION__);
+						 __FILE_NAME__, __FUNCTION__);
 			return false;
 		}
 		*shaderinfo = (sm_shaderinfo){0};
@@ -325,8 +325,8 @@ static bool sm_readShader(sm_state *const state, const char *const fpath,
 }
 
 static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata,
-                                                      const char *const dirname,
-                                                      const char *const fname) {
+													  const char *const dirname,
+													  const char *const fname) {
 	const struct sm_assets_state *const state = (struct sm_assets_state *const)userdata;
 	// copy the assets_path to a new buffer
 	char fpath[SM_MAX_PATH * 2] = {0};
@@ -336,7 +336,7 @@ static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata,
 		assert(strerror_s(errmsg, sizeof(errmsg), errnum) != 0);
 
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to copy string %s to %s: %s (%s:%s)",
-		             state->assets_path, fpath, errmsg, __FILE_NAME__, __FUNCTION__);
+					 state->assets_path, fpath, errmsg, __FILE_NAME__, __FUNCTION__);
 		return SDL_ENUM_FAILURE;
 	}
 
@@ -355,12 +355,12 @@ static SDL_EnumerationResult SDLCALL sm_walkAssetsDir(void *userdata,
 	SDL_PathInfo info = {0};
 	if(!SDL_GetPathInfo(fpath, &info)) {
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to get path info for %s: %s (%s:%s)",
-		             fpath, SDL_GetError(), __FILE_NAME__, __FUNCTION__);
+					 fpath, SDL_GetError(), __FILE_NAME__, __FUNCTION__);
 		return SDL_ENUM_FAILURE;
 	}
 	if(info.type != SDL_PATHTYPE_FILE) {
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Found unexpected item in assets dir: %s",
-		             fname);
+					 fname);
 		return SDL_ENUM_FAILURE;
 	}
 
@@ -409,12 +409,12 @@ bool sm_initAssets(sm_state *const state) {
 	SDL_PathInfo info = {0};
 	if(!SDL_GetPathInfo(assets_path, &info)) {
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to get path info for %s: %s (%s:%s)",
-		             assets_path, SDL_GetError(), __FILE_NAME__, __FUNCTION__);
+					 assets_path, SDL_GetError(), __FILE_NAME__, __FUNCTION__);
 		return false;
 	}
 	if(info.type != SDL_PATHTYPE_DIRECTORY) {
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Assets path (%s) doesn't point to a dir",
-		             assets_path);
+					 assets_path);
 		return false;
 	}
 
@@ -423,14 +423,14 @@ bool sm_initAssets(sm_state *const state) {
 	state->shaders_buf = calloc(SM_MAX_SHADERS_BUF, sizeof(char));
 	if(!state->shaders_buf) {
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to allocate heap memory (%s:%s)",
-		             __FILE_NAME__, __FUNCTION__);
+					 __FILE_NAME__, __FUNCTION__);
 		return false;
 	}
 	state->shaders_lookup =
 		(sm_shaderinfo **)calloc(SM_MAX_SHADERS, sizeof(sm_shaderinfo *));
 	if(!state->shaders_lookup) {
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to allocate heap memory (%s:%s)",
-		             __FILE_NAME__, __FUNCTION__);
+					 __FILE_NAME__, __FUNCTION__);
 		goto err1;
 	}
 

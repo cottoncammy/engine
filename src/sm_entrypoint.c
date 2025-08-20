@@ -23,12 +23,12 @@ static bool sm_initGpuPipelines(sm_state *state) {
 	}
 
 	if(!sm_createGraphicsPipeline(state, vert_shader, frag_shader, SDL_GPU_FILLMODE_FILL,
-	                              &state->fill_pipeline)) {
+								  &state->fill_pipeline)) {
 		goto err2;
 	}
 #ifndef NDEBUG
 	if(!sm_createGraphicsPipeline(state, vert_shader, frag_shader, SDL_GPU_FILLMODE_LINE,
-	                              &state->line_pipeline)) {
+								  &state->line_pipeline)) {
 		goto err3;
 	}
 #endif
@@ -54,15 +54,15 @@ static void sm_deinitGpuPipelines(sm_state *state) {
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 	if(!SDL_SetAppMetadata(SM_INFO_STRING, SM_VERSION_STRING,
-	                       "dev.cottoncammy.submachine")) {
+						   "dev.cottoncammy.submachine")) {
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to set app metadata: %s",
-		             SDL_GetError());
+					 SDL_GetError());
 		return SDL_APP_FAILURE;
 	}
 
 	if(!SDL_Init(SDL_INIT_VIDEO)) {
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to initialize SDL: %s",
-		             SDL_GetError());
+					 SDL_GetError());
 		return SDL_APP_FAILURE;
 	}
 
@@ -71,7 +71,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 	SDL_GPUDevice *device = SDL_CreateGPUDevice(device_flags, true, NULL);
 	if(device == NULL) {
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create GPU device: %s",
-		             SDL_GetError());
+					 SDL_GetError());
 		goto err1;
 	}
 
@@ -81,20 +81,20 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 	SDL_Window *window = SDL_CreateWindow(SM_INFO_STRING, 960, 600, window_flags);
 	if(!window) {
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create window: %s",
-		             SDL_GetError());
+					 SDL_GetError());
 		goto err2;
 	}
 
 	if(!SDL_ClaimWindowForGPUDevice(device, window)) {
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create swapchain for window: %s",
-		             SDL_GetError());
+					 SDL_GetError());
 		goto err3;
 	}
 
 	sm_state *state = malloc(sizeof(sm_state));
 	if(!state) {
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to allocate heap memory (%s:%s)",
-		             __FILE_NAME__, __FUNCTION__);
+					 __FILE_NAME__, __FUNCTION__);
 		goto err4;
 	}
 	*state = (sm_state){0};
@@ -129,15 +129,15 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 	SDL_GPUCommandBuffer *cmdbuf = SDL_AcquireGPUCommandBuffer(state->device);
 	if(!cmdbuf) {
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to acquire command buffer: %s",
-		             SDL_GetError());
+					 SDL_GetError());
 		return SDL_APP_FAILURE;
 	}
 
 	SDL_GPUTexture *swapchain_tex = NULL;
 	if(!SDL_WaitAndAcquireGPUSwapchainTexture(cmdbuf, state->window, &swapchain_tex, NULL,
-	                                          NULL)) {
+											  NULL)) {
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to acquire swapchain texture: %s",
-		             SDL_GetError());
+					 SDL_GetError());
 		return SDL_APP_FAILURE;
 	}
 
