@@ -13,6 +13,11 @@
 #include <SDL3/SDL_platform_defines.h>
 #ifndef SDL_PLATFORM_WIN32
 #	error Unsupported platform
+#else
+#	ifdef SDL_HINT_GPU_DRIVER
+#		undef SDL_HINT_GPU_DRIVER
+#	endif
+#	define SDL_HINT_GPU_DRIVER "direct3d12"  // prefer d3d12 on windows
 #endif
 
 #ifndef __STDC_VERSION__

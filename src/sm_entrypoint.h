@@ -9,7 +9,7 @@
 
 #define SM_MAX_ERRMSG 256
 #define SM_MAX_FILE (100 * 1024)
-#define SM_MAX_SHADERS 20
+#define SM_MAX_SHADERS 10
 
 // the max number of shaders * max file size * the number of shader formats
 #define SM_MAX_SHADERS_BUF (SM_MAX_SHADERS * SM_MAX_FILE * 3)

@@ -3,6 +3,9 @@
 // For a full list of overridable settings, and general information on folder-specific settings,
 // see the documentation: https://zed.dev/docs/configuring-zed#settings-files
 {
+  "preferred_line_length": 90,
+  "soft_wrap": "preferred_line_length",
+  "format_on_save": "off",
   "file_types": {
     "Plain Text": [
       ".git*",
@@ -10,13 +13,8 @@
       "*.cmake.in",
       "*.bat"
     ],
-    "YAML": [
-      ".clangd",
-      ".clang-format"
-    ],
-    "C": [
-      "*.h.in"
-    ]
+    "YAML": [ ".clangd", ".clang-format" ],
+    "C": [ "*.h.in" ]
   },
   "languages": {
     "C": {

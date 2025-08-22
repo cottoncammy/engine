@@ -1,5 +1,11 @@
+# clangd
 /.cache
+
+# cmake
 CMakeUserPresets.json
 /build
-/include/wuffs
 /target
+/include/wuffs
+
+# raddbg
+submachine.txt
