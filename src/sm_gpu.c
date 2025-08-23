@@ -74,15 +74,14 @@ bool sm_createShader(const sm_state *const state, sm_shader_idx idx,
 		.num_storage_buffers = 0,
 		.num_uniform_buffers = 0,
 	};
-	SDL_GPUShader *shader = SDL_CreateGPUShader(state->device, &createinfo);
-	if(!shader) {
+	*dst = SDL_CreateGPUShader(state->device, &createinfo);
+	if(!*dst) {
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create GPU shader %d: %s", idx,
 					 SDL_GetError());
 		goto err;
 	}
 
 	free(code);
-	*dst = shader;
 	return true;
 err:
 	free(code);
@@ -110,14 +109,12 @@ bool sm_createGraphicsPipeline(const sm_state *const state,
 				.num_color_targets = 1,
 			},
 	};
-	SDL_GPUGraphicsPipeline *pipeline =
-		SDL_CreateGPUGraphicsPipeline(state->device, &info);
-	if(!pipeline) {
+	*dst = SDL_CreateGPUGraphicsPipeline(state->device, &info);
+	if(!*dst) {
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create GPU graphics pipeline: %s",
 					 SDL_GetError());
 		return false;
 	}
 
-	*dst = pipeline;
 	return true;
 }
