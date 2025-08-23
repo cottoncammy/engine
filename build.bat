@@ -13,7 +13,7 @@ if /I "%1"=="--dbg" (
       set "cmake_config=--config ReleaseASAN"
     ) else (
       if /I "%1"=="--fresh" (
-        set "cmake_fresh=%1"
+        set "cmake_fresh=--fresh"
       ) else (
         echo unknown arg %1
         goto error
