@@ -31,7 +31,7 @@ endif()
 # options
 option(SUBMACHINE_INSTALL "Enable installation of submachine binary and data" OFF)
 
-# add submachine binary
+# add binary
 add_executable(submachine)
 
 # find dependencies or build them
@@ -46,7 +46,7 @@ if(NOT SDL3_FOUND)
     set(SDL_HIDAPI OFF)
     set(SDL_SHARED OFF)
     set(SDL_TEST_LIBRARY OFF)
-    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/vendor/SDL")
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/vendor/SDL" EXCLUDE_FROM_ALL)
 endif()
 
 find_package(SDL3_shadercross ${WANTED_SDL3_SHADERCROSS_VERSION} QUIET NO_CMAKE_FIND_ROOT_PATH)
@@ -60,7 +60,7 @@ endif()
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/build-wuffs.cmake")
 
-# configure submachine binary
+# configure binary
 target_compile_features(submachine PRIVATE c_std_11)
 set_target_properties(submachine PROPERTIES
     C_STANDARD 11
@@ -69,7 +69,11 @@ set_target_properties(submachine PROPERTIES
     COMPILE_WARNING_AS_ERROR ON
     EXPORT_COMPILE_COMMANDS ON
     COMPILE_OPTIONS $<$<CONFIG:ReleaseASAN>:-fsanitize=address>
-    LINK_OPTIONS $<$<CONFIG:ReleaseASAN>:-fsanitize=address>
+    MSVC_DEBUG_INFORMATION_FORMAT $<$<CONFIG:Debug,ReleaseASAN>:ProgramDatabase>
+)
+target_link_options(submachine PRIVATE
+    $<$<CONFIG:ReleaseASAN>:-fsanitize=address>
+    $<$<AND:$<CONFIG:Debug,ReleaseASAN>,$<PLATFORM_ID:Windows>>:/debug>
 )
 
 configure_file(
@@ -153,6 +157,7 @@ foreach(SHADERCROSS_INPUT_FILE IN LISTS SHADERCROSS_INPUT_FILES)
     endforeach()
 endforeach()
 
+# installation
 if(SUBMACHINE_INSTALL)
     include(GNUInstallDirs)
     set(CMAKE_CONFIG_INSTALL_PATH "cmake")
