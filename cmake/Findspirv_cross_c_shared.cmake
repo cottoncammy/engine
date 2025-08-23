@@ -13,9 +13,6 @@ if(NOT spirv-cross-c-shared_FOUND AND Vulkan_FOUND)
             IMPORTED_LOCATION "${VULKAN_BIN_PATH}/spirv-cross-c-shared.dll"
             IMPORTED_IMPLIB "${VULKAN_LIB_PATH}/spirv-cross-c-shared.lib"
         )
-    else()
-        # TODO
-        set_property(TARGET spirv-cross-c-shared PROPERTY IMPORTED_LOCATION "${VULKAN_LIB_PATH}/TODO")
     endif()
     set(spirv-cross-c-shared_FOUND TRUE)
 endif()

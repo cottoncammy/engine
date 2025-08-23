@@ -65,7 +65,10 @@ add_standard_include_directories("${VS17_MSVC_INSTALL_PATH}/include")
 
 set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded$<$<CONFIG:Debug>:Debug>)
 
-set_and_check_path(VS17_LLVM_INSTALL_PATH "${VS17_INSTALL_PATH}/VC/Tools/Llvm/x64/bin")
-set_compiler("${VS17_LLVM_INSTALL_PATH}/clang-cl.exe")
+set_and_check_path(VS17_LLVM_INSTALL_PATH "${VS17_INSTALL_PATH}/VC/Tools/Llvm/x64")
+set_and_check_path(VS17_LLVM_BIN_PATH "${VS17_LLVM_INSTALL_PATH}/bin")
+set_and_append_paths(CMAKE_LIBRARY_PATH "${VS17_LLVM_INSTALL_PATH}/lib/clang/19/lib/windows")
+
+set_compiler("${VS17_LLVM_BIN_PATH}/clang-cl.exe")
 set(CMAKE_LINKER_TYPE LLD)
-set(CMAKE_RC_COMPILER "${VS17_LLVM_INSTALL_PATH}/llvm-rc.exe")
+set(CMAKE_RC_COMPILER "${VS17_LLVM_BIN_PATH}/llvm-rc.exe")
