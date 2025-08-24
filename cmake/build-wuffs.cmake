@@ -21,8 +21,7 @@ set(WUFFS_BASE_SOURCE_FILES
 
 target_sources(wuffs_base
     INTERFACE
-        FILE_SET wuffs_base_header
-        TYPE HEADERS
+        FILE_SET HEADERS
         BASE_DIRS ${WUFFS_BASE_DIRS}
         FILES ${WUFFS_BASE_SOURCE_FILES}
     INTERFACE ${WUFFS_BASE_SOURCE_FILES}
