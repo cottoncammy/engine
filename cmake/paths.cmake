@@ -25,11 +25,11 @@ macro(set_and_append_paths OUT_VAR)
     list(APPEND ${OUT_VAR} ${ARGN})
 endmacro()
 
-function(get_relative_path PATH_VAR BASE_DIR OUT_VAR)
+macro(get_relative_path PATH_VAR BASE_DIR OUT_VAR)
     cmake_path(RELATIVE_PATH
-        PATH_VAR
+        ${PATH_VAR}
         BASE_DIRECTORY "${BASE_DIR}"
-        OUTPUT_VARIABLE OUT_VAR
+        OUTPUT_VARIABLE ${OUT_VAR}
     )
-    cmake_path(NATIVE_PATH OUT_VAR OUT_VAR)
-endfunction()
+    cmake_path(NATIVE_PATH ${OUT_VAR} ${OUT_VAR})
+endmacro()

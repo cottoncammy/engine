@@ -117,6 +117,55 @@ if(WIN32)
 endif()
 
 # ================================================================================
+# compile shaders
+# ================================================================================
+set(SHADERCROSS_INPUT_FILES
+    assets/shaders/color.frag.hlsl
+    assets/shaders/triangle.vert.hlsl
+)
+list(TRANSFORM SHADERCROSS_INPUT_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
+
+set(SHADERS_INSTALL_PATH "$<TARGET_FILE_DIR:submachine>/assets")
+add_custom_command(TARGET submachine
+    PRE_LINK
+    COMMAND cmake -E make_directory "${SHADERS_INSTALL_PATH}"
+    COMMENT "Making assets dir"
+    VERBATIM
+)
+set(SHADERCROSS_OUTPUT_FILES)
+
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/paths.cmake")
+foreach(SHADERCROSS_INPUT_FILE ${SHADERCROSS_INPUT_FILES})
+    get_relative_path(SHADERCROSS_INPUT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders" SHADERCROSS_INPUT_FILE_RELATIVE)
+
+    cmake_path(GET SHADERCROSS_INPUT_FILE FILENAME SHADERCROSS_INPUT_FILENAME)
+    cmake_path(REMOVE_EXTENSION
+        SHADERCROSS_INPUT_FILENAME
+        LAST_ONLY
+        OUTPUT_VARIABLE SHADERCROSS_INPUT_FILE_STEM
+    )
+
+    foreach(SHADER_FORMAT JSON DXIL SPIRV)
+        set(SHADERCROSS_OUTPUT_FILE ${SHADERCROSS_INPUT_FILE_STEM})
+        if(SHADER_FORMAT STREQUAL JSON)
+            string(APPEND SHADERCROSS_OUTPUT_FILE ".json")
+        elseif(SHADER_FORMAT STREQUAL DXIL)
+            string(APPEND SHADERCROSS_OUTPUT_FILE ".dxil")
+        else()
+            string(APPEND SHADERCROSS_OUTPUT_FILE ".spv")
+        endif()
+        list(APPEND SHADERCROSS_OUTPUT_FILES "${SHADERCROSS_OUTPUT_FILE}")
+
+        add_custom_command(TARGET submachine
+            PRE_LINK
+            COMMAND shadercross "${SHADERCROSS_INPUT_FILE}" -o "${SHADERS_INSTALL_PATH}/${SHADERCROSS_OUTPUT_FILE}"
+            COMMENT "Compiling ${SHADERCROSS_INPUT_FILE_RELATIVE} to ${SHADERCROSS_OUTPUT_FILE}"
+            VERBATIM
+        )
+    endforeach()
+endforeach()
+
+# ================================================================================
 # run tests
 # ================================================================================
 enable_testing()
@@ -153,54 +202,6 @@ foreach(SUBMACHINE_TEST_FILE ${SUBMACHINE_TEST_FILES})
         COMMENT "Running test ${SUBMACHINE_TEST_NAME}.exe"
         VERBATIM
     )
-endforeach()
-
-# ================================================================================
-# compile shaders
-# ================================================================================
-set(SHADERCROSS_INPUT_FILES
-    assets/shaders/color.frag.hlsl
-    assets/shaders/triangle.vert.hlsl
-)
-list(TRANSFORM SHADERCROSS_INPUT_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
-
-set(SHADERS_INSTALL_PATH "$<TARGET_FILE_DIR:submachine>/assets")
-add_custom_command(TARGET submachine
-    POST_BUILD
-    COMMAND cmake -E make_directory "${SHADERS_INSTALL_PATH}"
-    COMMENT "Making assets dir"
-    VERBATIM
-)
-set(SHADERCROSS_OUTPUT_FILES)
-
-include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/paths.cmake")
-foreach(SHADERCROSS_INPUT_FILE ${SHADERCROSS_INPUT_FILES})
-    cmake_path(GET SHADERCROSS_INPUT_FILE FILENAME SHADERCROSS_INPUT_FILENAME)
-    get_relative_path(SHADERCROSS_INPUT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders" SHADERCROSS_INPUT_FILE_RELATIVE_PATH)
-    cmake_path(REMOVE_EXTENSION
-        SHADERCROSS_INPUT_FILENAME
-        LAST_ONLY
-        OUTPUT_VARIABLE SHADERCROSS_INPUT_FILE_STEM
-    )
-
-    foreach(SHADER_FORMAT JSON DXIL SPIRV)
-        set(SHADERCROSS_OUTPUT_FILE ${SHADERCROSS_INPUT_FILE_STEM})
-        if(SHADER_FORMAT STREQUAL JSON)
-            string(APPEND SHADERCROSS_OUTPUT_FILE ".json")
-        elseif(SHADER_FORMAT STREQUAL DXIL)
-            string(APPEND SHADERCROSS_OUTPUT_FILE ".dxil")
-        else()
-            string(APPEND SHADERCROSS_OUTPUT_FILE ".spv")
-        endif()
-        list(APPEND SHADERCROSS_OUTPUT_FILES "${SHADERCROSS_OUTPUT_FILE}")
-
-        add_custom_command(TARGET submachine
-            POST_BUILD
-            COMMAND shadercross "${SHADERCROSS_INPUT_FILE}" -o "${SHADERS_INSTALL_PATH}/${SHADERCROSS_OUTPUT_FILE}"
-            COMMENT "Compiling ${SHADERCROSS_INPUT_FILE} to ${SHADERCROSS_OUTPUT_FILE}"
-            VERBATIM
-        )
-    endforeach()
 endforeach()
 
 # ================================================================================
