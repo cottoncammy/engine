@@ -15,7 +15,7 @@ if /I "%1"=="--dbg" (
       if /I "%1"=="--fresh" (
         set "cmake_fresh=--fresh"
       ) else (
-        echo unknown arg %1
+        echo unknown arg: %1
         goto error
       )
     )

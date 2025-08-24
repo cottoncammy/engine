@@ -34,4 +34,4 @@ Additionally, you need the build tools for Visual Studio 2022 ([download link](h
 
 `submachine` must be built from source using CMake. Currently, building is only supported on Windows x64 for Windows x64.
 
-Checkout using `git clone --recurse-submodules`, then run `./build.bat` to build and install the binary.
+Clone using `git clone --recurse-submodules`, then run `./build.bat` to build and install the binary.

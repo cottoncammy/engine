@@ -5,7 +5,7 @@ macro(check_path PATH_VAR)
 endmacro()
 
 function(_check_paths)
-    foreach(PATH_VAR IN LISTS ${ARGN})
+    foreach(PATH_VAR ${ARGN})
         check_path("${PATH_VAR}")
     endforeach()
 endfunction()

@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.50 FATAL_ERROR)
 
 project(submachine VERSION 0.1.0 LANGUAGES C)
 
-# check build config
+# ================================================================================
+# check config
+# ================================================================================
 if(NOT WIN32 OR NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "AMD64")
     message(FATAL_ERROR "only builds targeting Windows x64 are supported")
 endif()
@@ -28,13 +30,14 @@ elseif(BUILD_SHARED_LIBS)
     message(FATAL_ERROR "shared library builds aren't supported")
 endif()
 
+# ================================================================================
 # options
+# ================================================================================
 option(SUBMACHINE_INSTALL "Enable installation of submachine binary and data" OFF)
 
-# add binary
-add_executable(submachine)
-
-# find dependencies or build them
+# ================================================================================
+# find dependencies
+# ================================================================================
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(WANTED_SDL3_VERSION 3.2.0)
 set(WANTED_SDL3_SHADERCROSS_VERSION 3.0.0)
@@ -59,7 +62,11 @@ endif()
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/build-wuffs.cmake")
 
-# configure binary
+# ================================================================================
+# build and configure binary
+# ================================================================================
+add_executable(submachine)
+
 target_compile_features(submachine PRIVATE c_std_11)
 set_target_properties(submachine PROPERTIES
     C_STANDARD 11
@@ -110,7 +117,37 @@ if(WIN32)
     target_link_libraries(submachine PRIVATE pathcch $<$<CONFIG:ReleaseASAN>:clang_rt.asan-x86_64>)
 endif()
 
-# compile shaders after building
+# ================================================================================
+# run tests
+# ================================================================================
+enable_testing()
+
+set(SUBMACHINE_TEST_FILES
+    src/sm_ui.test.c
+)
+
+foreach(SUBMACHINE_TEST_FILE ${SUBMACHINE_TEST_FILES})
+    cmake_path(GET SUBMACHINE_TEST_FILE STEM SUBMACHINE_TEST_FILE_STEM)
+    cmake_path(GET SUBMACHINE_TEST_FILE_STEM STEM SUBMACHINE_TEST_NAME)
+    string(REPLACE "_" "-" SUBMACHINE_TEST_NAME ${SUBMACHINE_TEST_NAME})
+
+    add_executable(${SUBMACHINE_TEST_NAME} ${SUBMACHINE_TEST_FILE})
+    set_property(TARGET ${SUBMACHINE_TEST_NAME} PROPERTY
+        RUNTIME_OUTPUT_DIRECTORY "$<TARGET_FILE_DIR:submachine>/tests"
+    )
+
+    add_test(NAME ${SUBMACHINE_TEST_NAME} COMMAND ${SUBMACHINE_TEST_NAME})
+    add_custom_command(TARGET submachine
+        PRE_LINK
+        COMMAND ${SUBMACHINE_TEST_NAME}
+        COMMENT "Running test ${SUBMACHINE_TEST_NAME}.exe"
+        VERBATIM
+    )
+endforeach()
+
+# ================================================================================
+# compile shaders
+# ================================================================================
 set(SHADERCROSS_INPUT_FILES
     assets/shaders/color.frag.hlsl
     assets/shaders/triangle.vert.hlsl
@@ -121,13 +158,13 @@ set(SHADERS_INSTALL_PATH "$<TARGET_FILE_DIR:submachine>/assets")
 add_custom_command(TARGET submachine
     POST_BUILD
     COMMAND cmake -E make_directory "${SHADERS_INSTALL_PATH}"
-    COMMENT "Making dir ${SHADERS_INSTALL_PATH}"
+    COMMENT "Making assets dir"
     VERBATIM
 )
 set(SHADERCROSS_OUTPUT_FILES)
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/paths.cmake")
-foreach(SHADERCROSS_INPUT_FILE IN LISTS SHADERCROSS_INPUT_FILES)
+foreach(SHADERCROSS_INPUT_FILE ${SHADERCROSS_INPUT_FILES})
     cmake_path(GET SHADERCROSS_INPUT_FILE FILENAME SHADERCROSS_INPUT_FILENAME)
     get_relative_path(SHADERCROSS_INPUT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders" SHADERCROSS_INPUT_FILE_RELATIVE_PATH)
     cmake_path(REMOVE_EXTENSION
@@ -156,7 +193,9 @@ foreach(SHADERCROSS_INPUT_FILE IN LISTS SHADERCROSS_INPUT_FILES)
     endforeach()
 endforeach()
 
-# installation
+# ================================================================================
+# install binary
+# ================================================================================
 if(SUBMACHINE_INSTALL)
     include(GNUInstallDirs)
     set(CMAKE_CONFIG_INSTALL_PATH "cmake")

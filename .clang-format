@@ -1,5 +1,10 @@
 # see: https://github.com/llvm/llvm-project/blob/llvmorg-19.1.5/clang/docs/ClangFormatStyleOptions.rst
 Language: Cpp
+AllowShortBlocksOnASingleLine: Empty
+AllowShortCaseExpressionOnASingleLine: true
+AllowShortEnumsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: WithoutElse
 BreakBeforeBraces: Attach
 BreakStringLiterals: true
 ColumnLimit: 90

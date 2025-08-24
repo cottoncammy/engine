@@ -12,4 +12,5 @@ Diagnostics:
   UnusedIncludes: Strict
   MissingIncludes: None
 InlayHints:
+  ParameterNames: true
   BlockEnd: true
