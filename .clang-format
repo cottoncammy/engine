@@ -4,7 +4,6 @@ AllowShortBlocksOnASingleLine: Empty
 AllowShortCaseExpressionOnASingleLine: true
 AllowShortEnumsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: Empty
-AllowShortIfStatementsOnASingleLine: WithoutElse
 BreakBeforeBraces: Attach
 BreakStringLiterals: true
 ColumnLimit: 90

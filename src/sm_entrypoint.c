@@ -91,15 +91,14 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 		goto err3;
 	}
 
-	sm_state *state = malloc(sizeof(sm_state));
-	if(!state) {
+	*appstate = calloc(1, sizeof(sm_state));
+	if(!*appstate) {
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to allocate heap memory (%s:%s)",
 					 __FILE_NAME__, __FUNCTION__);
 		goto err4;
 	}
-	*state = (sm_state){0};
 
-	*appstate = state;
+	sm_state *state = *appstate;
 	state->device = device;
 	state->window = window;
 	if(!sm_initAssets(state)) {

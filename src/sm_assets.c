@@ -276,8 +276,9 @@ static bool sm_readShader(sm_state *const state, const char *const fpath,
 
 	// copy file bytes
 	// NOLINTBEGIN: widening conversion from positive int to size_t doesn't matter
-	const errno_t errnum = memcpy_s(state->shaders_buf + state->shaders_len,
-									sizeof(char) * SM_MAX_SHADERS_BUF, buf, buf_len);
+	const errno_t errnum =
+		memcpy_s(state->shaders_buf + state->shaders_len,
+				 sizeof(char) * SM_MAX_SHADERS_BUF - state->shaders_len, buf, buf_len);
 	// NOLINTEND
 	if(errnum != 0) {
 		char errmsg[SM_MAX_ERRMSG] = {0};
@@ -395,7 +396,6 @@ static void sm_deinitShadersState(sm_state *const state) {
 	for(size_t i = 0; i < state->shaders_lut_len; ++i) {
 		free(state->shaders_lookup[i]);
 	}
-	free((void *)state->shaders_lookup);
 }
 
 bool sm_initAssets(sm_state *const state) {
@@ -426,13 +426,6 @@ bool sm_initAssets(sm_state *const state) {
 					 __FILE_NAME__, __FUNCTION__);
 		return false;
 	}
-	state->shaders_lookup =
-		(sm_shaderinfo **)calloc(SM_MAX_SHADERS, sizeof(sm_shaderinfo *));
-	if(!state->shaders_lookup) {
-		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to allocate heap memory (%s:%s)",
-					 __FILE_NAME__, __FUNCTION__);
-		goto err1;
-	}
 
 	// walk the dir
 	struct sm_assets_state assets_state = {
@@ -440,13 +433,12 @@ bool sm_initAssets(sm_state *const state) {
 		.assets_path = assets_path,
 	};
 	if(!SDL_EnumerateDirectory(assets_path, sm_walkAssetsDir, &assets_state)) {
-		goto err2;
+		goto err;
 	}
 
 	return true;
-err2:
+err:
 	sm_deinitShadersState(state);
-err1:
 	free(state->shaders_buf);
 	return false;
 }

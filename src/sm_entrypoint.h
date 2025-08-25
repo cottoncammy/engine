@@ -40,6 +40,6 @@ typedef struct {
 #endif
 	char *shaders_buf;
 	size_t shaders_len;
-	sm_shaderinfo **shaders_lookup;
+	sm_shaderinfo *shaders_lookup[SM_MAX_SHADERS];
 	size_t shaders_lut_len;
 } sm_state;

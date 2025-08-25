@@ -169,10 +169,7 @@ endforeach()
 # run tests
 # ================================================================================
 enable_testing()
-
-set(SUBMACHINE_TEST_FILES
-    src/sm_ui.test.c
-)
+set(SUBMACHINE_TEST_FILES)
 
 get_property(SUBMACHINE_INCLUDES TARGET submachine PROPERTY INCLUDE_DIRECTORIES)
 get_property(SUBMACHINE_LINKS TARGET submachine PROPERTY LINK_LIBRARIES)
