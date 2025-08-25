@@ -269,17 +269,18 @@ static bool sm_readShader(sm_state *const state, const char *const fpath,
 
 	// read file bytes
 	size_t buf_len = 0;
-	char buf[SM_MAX_FILE] = {0};
-	if(!sm_readFile(fpath, &buf_len, sizeof(buf), buf)) {
+	// NOLINTBEGIN: widening conversion from positive int to size_t doesn't matter
+	char *buf = calloc(SM_MAX_FILE, sizeof(char));
+	if(!sm_readFile(fpath, &buf_len, sizeof(char) * SM_MAX_FILE, buf)) {
 		return false;
 	}
 
 	// copy file bytes
-	// NOLINTBEGIN: widening conversion from positive int to size_t doesn't matter
 	const errno_t errnum =
 		memcpy_s(state->shaders_buf + state->shaders_len,
 				 sizeof(char) * SM_MAX_SHADERS_BUF - state->shaders_len, buf, buf_len);
 	// NOLINTEND
+	free(buf);
 	if(errnum != 0) {
 		char errmsg[SM_MAX_ERRMSG] = {0};
 		assert(strerror_s(errmsg, sizeof(errmsg), errnum) != 0);
